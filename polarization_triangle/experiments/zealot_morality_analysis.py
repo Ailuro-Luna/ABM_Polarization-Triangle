@@ -1863,7 +1863,7 @@ if __name__ == "__main__":
     # 可以多次运行以下命令来积累数据：
     run_and_accumulate_data(
         output_dir="results/zealot_morality_analysis",
-        num_runs=200,  # 每次运行200轮测试
+        num_runs=100,  # 每次运行100轮测试
         max_zealots=100,  
         max_morality=100,
         # batch_name="batch_001"  # 可选：给批次命名

@@ -48,7 +48,7 @@ batch_results/
 results/
 results_for_thesis/
 
-scripts/
+./scripts/
 network_cache/
 polarization_triangle - 副本/
 not_use/

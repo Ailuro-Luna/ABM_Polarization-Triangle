@@ -47,6 +47,11 @@ To study how zealot agents influence opinion formation and moralization processe
 python -m polarization_triangle.experiments.zealot_morality_analysis
 ```
 
+**Runtime Information:**
+- Each execution runs 100 simulation runs per data point (~5 hours)
+- Results from multiple executions can be accumulated for robust analysis
+- Thesis results are based on 1,600 accumulated runs
+
 This experiment examines:
 - Impact of zealot agents number on opinion propagation
 - Impact of zealot advocacy on opinion propagation
@@ -64,6 +69,10 @@ Parameters:
 - `--runs`: Number of simulation runs (default: 20)
 - `--steps`: Number of time steps per simulation (default: 300)
 
+**Runtime Information:**
+- Example command above takes approximately 20 minutes to complete
+- Thesis results are based on 500 simulation runs
+
 This experiment explores:
 - Temporal evolution of opinion distributions
 - Long-term stability of opinion states
@@ -77,8 +86,35 @@ python polarization_triangle/scripts/run_sobol_analysis.py --config full
 ```
 
 Configuration options:
+- `--config quick`: Fast analysis with reduced precision
+- `--config standard`: Balanced analysis (default)
+- `--config high_precision`: High-precision analysis with more samples
 - `--config full`: Complete sensitivity analysis across all parameters
-- `--config limited`: Focused analysis on key parameters
+
+**Experimental Conditions:**
+The following parameters can be combined to create four experimental scenarios used in the thesis:
+- `--structural-alignment`: Choose `low` or `high`
+- `--morality-ratio`: Choose `0.0` or `0.3`
+
+Example combinations:
+```bash
+# Scenario 1: Low structural alignment, no morality
+python polarization_triangle/scripts/run_sobol_analysis.py --config full --structural-alignment low --morality-ratio 0.0
+
+# Scenario 2: Low structural alignment, with morality
+python polarization_triangle/scripts/run_sobol_analysis.py --config full --structural-alignment low --morality-ratio 0.3
+
+# Scenario 3: High structural alignment, no morality
+python polarization_triangle/scripts/run_sobol_analysis.py --config full --structural-alignment high --morality-ratio 0.0
+
+# Scenario 4: High structural alignment, with morality
+python polarization_triangle/scripts/run_sobol_analysis.py --config full --structural-alignment high --morality-ratio 0.3
+```
+
+**Runtime Information:**
+- `--config full` takes approximately 12 hours to complete
+- Thesis results are based on `--config full`
+- For detailed configuration parameters, see `polarization_triangle/scripts/run_sobol_analysis.py`
 
 This analysis provides:
 - First-order and total-effect sensitivity indices

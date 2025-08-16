@@ -48,6 +48,10 @@ class SobolConfig:
     base_config: Optional[SimulationConfig] = None
     num_steps: int = 300            # 模拟步数
     
+    # 条件参数
+    structural_alignment: str = 'low'   # 'high' (cluster_identity=True) 或 'low' (cluster_identity=False)
+    morality_ratio: float = 0.0         # 道德化率: 0.0 或 0.3
+    
     # 计算参数
     n_processes: int = 4            # 并行进程数
     save_intermediate: bool = True   # 是否保存中间结果
@@ -59,6 +63,9 @@ class SobolConfig:
 
     def __post_init__(self):
         if self.base_config is None:
+            # 根据条件参数设置cluster_identity和morality_rate
+            cluster_identity_value = (self.structural_alignment == 'high')
+            
             self.base_config = SimulationConfig(
                 num_agents=200,
                 network_type='lfr',
@@ -67,8 +74,8 @@ class SobolConfig:
                     'average_degree': 5, 'min_community': 10
                 },
                 opinion_distribution='uniform',
-                morality_rate=0,
-                cluster_identity=False,
+                morality_rate=self.morality_ratio,
+                cluster_identity=cluster_identity_value,
                 cluster_morality=False,
                 cluster_opinion=False,
                 # Zealot配置
@@ -78,6 +85,10 @@ class SobolConfig:
                 zealot_morality=True,
                 zealot_identity_allocation=False
             )
+        else:
+            # 如果提供了base_config，更新条件参数
+            self.base_config.morality_rate = self.morality_ratio
+            self.base_config.cluster_identity = (self.structural_alignment == 'high')
 
 
 class SobolAnalyzer:
