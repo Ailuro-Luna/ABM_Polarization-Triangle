@@ -8,26 +8,26 @@ from matplotlib.colors import LogNorm
 def draw_opinion_distribution_heatmap(history, title, filename, bins=50, log_scale=True, 
                                       cmap='viridis', vmin=None, vmax=None, custom_norm=None):
     """
-    绘制三维热力图，展示opinion分布随时间的变化。
+    Draw 3D heatmap showing opinion distribution changes over time.
 
-    参数:
-    history -- 包含每个时间步骤所有agent opinions的数组，形状为(time_steps, n_agents)
-    title -- 图表标题
-    filename -- 保存文件名
-    bins -- opinion值的分箱数量
-    log_scale -- 是否使用对数比例表示颜色，对于凸显小峰值很有用
-    cmap -- 颜色映射方案 ('viridis', 'plasma', 'inferno', 'magma', 'coolwarm', 'RdBu', 'hot', 'jet', etc.)
-    vmin -- 颜色尺度的最小值，如果为None则自动确定
-    vmax -- 颜色尺度的最大值，如果为None则自动确定
-    custom_norm -- 自定义的颜色标准化对象，如果提供则会覆盖log_scale、vmin、vmax
+    Parameters:
+    history -- Array containing all agent opinions for each time step, shape (time_steps, n_agents)
+    title -- Chart title
+    filename -- Save filename
+    bins -- Number of bins for opinion values
+    log_scale -- Whether to use logarithmic scale for colors, useful for highlighting small peaks
+    cmap -- Color mapping scheme ('viridis', 'plasma', 'inferno', 'magma', 'coolwarm', 'RdBu', 'hot', 'jet', etc.)
+    vmin -- Minimum value for color scale, auto-determined if None
+    vmax -- Maximum value for color scale, auto-determined if None
+    custom_norm -- Custom color normalization object, overrides log_scale, vmin, vmax if provided
     """
-    # 转换为numpy数组确保兼容性
+    # Convert to numpy array for compatibility
     history = np.array(history)
 
-    # 获取时间步数和智能体数量
+    # Get number of time steps and agents
     time_steps, n_agents = history.shape
 
-    # 创建opinion的bins
+    # Create bins for opinion values
     opinion_bins = np.linspace(-1, 1, bins + 1)
 
     # 初始化热力图数据矩阵

@@ -1,6 +1,6 @@
 """
-敏感性分析输出指标计算模块
-计算用于Sobol敏感性分析的各种输出指标
+Sensitivity analysis output metrics calculation module
+Calculate various output metrics for Sobol sensitivity analysis
 """
 
 import numpy as np  
@@ -16,84 +16,84 @@ from .statistics import (
 
 
 class SensitivityMetrics:
-    """敏感性分析指标计算器"""
+    """Sensitivity analysis metrics calculator"""
     
     def __init__(self):
         self.metric_names = [
-            # 极化相关指标
+            # Polarization-related metrics
             'polarization_index',
             'opinion_variance', 
             'extreme_ratio',
             'identity_polarization',
             
-            # 收敛相关指标
+            # Convergence-related metrics
             'mean_abs_opinion',
             'final_stability',
-            # 'convergence_time',  # 需要更复杂的实现
+            # 'convergence_time',  # Requires more complex implementation
             
-            # 动态过程指标
+            # Dynamic process metrics
             'trajectory_length',
             'oscillation_frequency',
             'group_divergence',
             
-            # 身份相关指标
+            # Identity-related metrics
             'identity_variance_ratio',
             'cross_identity_correlation',
             
-            # Variance per identity 指标
-            'variance_per_identity_1',      # identity=1群体的方差
-            'variance_per_identity_neg1',   # identity=-1群体的方差
-            'variance_per_identity_mean'    # 两个群体方差的均值
+            # Variance per identity metrics
+            'variance_per_identity_1',      # Variance of identity=1 group
+            'variance_per_identity_neg1',   # Variance of identity=-1 group
+            'variance_per_identity_mean'    # Mean variance of the two groups
         ]
     
     def calculate_all_metrics(self, sim: Simulation) -> Dict[str, float]:
-        """计算所有敏感性分析指标"""
+        """Calculate all sensitivity analysis metrics"""
         metrics = {}
         
         try:
-            # 极化相关指标
+            # Polarization-related metrics
             metrics.update(self._calculate_polarization_metrics(sim))
             
-            # 收敛相关指标  
+            # Convergence-related metrics  
             metrics.update(self._calculate_convergence_metrics(sim))
             
-            # 动态过程指标
+            # Dynamic process metrics
             metrics.update(self._calculate_dynamics_metrics(sim))
             
-            # 身份相关指标
+            # Identity-related metrics
             metrics.update(self._calculate_identity_metrics(sim))
             
-            # Variance per identity 指标
+            # Variance per identity metrics
             metrics.update(self._calculate_variance_per_identity_metrics(sim))
             
         except Exception as e:
-            warnings.warn(f"计算指标时出错: {e}")
+            warnings.warn(f"Error calculating metrics: {e}")
             metrics = self.get_default_metrics()
         
         return metrics
     
     def _calculate_polarization_metrics(self, sim: Simulation) -> Dict[str, float]:
-        """计算极化相关指标"""
+        """Calculate polarization-related metrics"""
         metrics = {}
         
         try:
-            # Koudenburg极化指数
+            # Koudenburg polarization index
             metrics['polarization_index'] = self._calculate_koudenburg_polarization(sim.opinions)
             
-            # 意见方差
+            # Opinion variance
             metrics['opinion_variance'] = np.var(sim.opinions)
             
-            # 极端观点比例 (|opinion| > 0.8)
+            # Extreme opinion ratio (|opinion| > 0.8)
             extreme_mask = np.abs(sim.opinions) > 0.8
             metrics['extreme_ratio'] = np.mean(extreme_mask)
             
-            # 身份间极化差异
+            # Polarization difference between identities
             metrics['identity_polarization'] = self._calculate_identity_polarization(
                 sim.opinions, sim.identities
             )
             
         except Exception as e:
-            warnings.warn(f"计算极化指标时出错: {e}")
+            warnings.warn(f"Error calculating polarization metrics: {e}")
             metrics = {
                 'polarization_index': 0.0,
                 'opinion_variance': 0.0,
@@ -104,21 +104,21 @@ class SensitivityMetrics:
         return metrics
     
     def _calculate_convergence_metrics(self, sim: Simulation) -> Dict[str, float]:
-        """计算收敛相关指标"""
+        """Calculate convergence-related metrics"""
         metrics = {}
         
         try:
-            # 平均绝对意见
+            # Mean absolute opinion
             metrics['mean_abs_opinion'] = np.mean(np.abs(sim.opinions))
             
-            # 最终稳定性 (最后10%步数内的方差系数)
+            # Final stability (coefficient of variation within last 10% of steps)
             if hasattr(sim, 'opinion_history') and len(sim.opinion_history) > 10:
                 final_portion = int(len(sim.opinion_history) * 0.1)
                 final_opinions = sim.opinion_history[-final_portion:]
                 if len(final_opinions) > 1:
                     final_mean = np.mean(final_opinions, axis=0)
                     final_std = np.std(final_opinions, axis=0)
-                    # 变异系数的平均值
+                    # Mean coefficient of variation
                     cv_values = []
                     for i in range(len(final_mean)):
                         if final_mean[i] != 0:
@@ -130,7 +130,7 @@ class SensitivityMetrics:
                 metrics['final_stability'] = 0.0
                 
         except Exception as e:
-            warnings.warn(f"计算收敛指标时出错: {e}")
+            warnings.warn(f"Error calculating convergence metrics: {e}")
             metrics = {
                 'mean_abs_opinion': 0.0,
                 'final_stability': 0.0
@@ -139,21 +139,21 @@ class SensitivityMetrics:
         return metrics
     
     def _calculate_dynamics_metrics(self, sim: Simulation) -> Dict[str, float]:
-        """计算动态过程指标"""
+        """Calculate dynamic process metrics"""
         metrics = {}
         
         try:
-            # 意见轨迹长度
+            # Opinion trajectory length
             metrics['trajectory_length'] = self._calculate_trajectory_length(sim)
             
-            # 振荡频率
+            # Oscillation frequency
             metrics['oscillation_frequency'] = self._calculate_oscillation_frequency(sim)
             
-            # 群体分化度
+            # Group divergence
             metrics['group_divergence'] = self._calculate_group_divergence(sim)
             
         except Exception as e:
-            warnings.warn(f"计算动态指标时出错: {e}")
+            warnings.warn(f"Error calculating dynamic metrics: {e}")
             metrics = {
                 'trajectory_length': 0.0,
                 'oscillation_frequency': 0.0,
@@ -163,22 +163,22 @@ class SensitivityMetrics:
         return metrics
     
     def _calculate_identity_metrics(self, sim: Simulation) -> Dict[str, float]:
-        """计算身份相关指标"""
+        """Calculate identity-related metrics"""
         metrics = {}
         
         try:
-            # 身份内外方差比
+            # Identity within/between variance ratio
             metrics['identity_variance_ratio'] = self._calculate_identity_variance_ratio(
                 sim.opinions, sim.identities
             )
             
-            # 跨身份相关性
+            # Cross-identity correlation
             metrics['cross_identity_correlation'] = self._calculate_cross_identity_correlation(
                 sim.opinions, sim.identities
             )
             
         except Exception as e:
-            warnings.warn(f"计算身份指标时出错: {e}")
+            warnings.warn(f"Error calculating identity metrics: {e}")
             metrics = {
                 'identity_variance_ratio': 0.0,
                 'cross_identity_correlation': 0.0
@@ -187,12 +187,12 @@ class SensitivityMetrics:
         return metrics  
     
     def _calculate_variance_per_identity_metrics(self, sim: Simulation) -> Dict[str, float]:
-        """计算 variance per identity 指标"""
+        """Calculate variance per identity metrics"""
         metrics = {}
         
         try:
-            # 获取非zealot节点的意见和身份（排除zealot的影响）
-            # 创建 zealot mask：如果一个agent的ID在 zealot_ids 中，则为True
+            # Get opinions and identities of non-zealot nodes (exclude zealot influence)
+            # Create zealot mask: True if an agent's ID is in zealot_ids
             zealot_mask = np.zeros(sim.num_agents, dtype=bool)
             if hasattr(sim, 'enable_zealots') and sim.enable_zealots and hasattr(sim, 'zealot_ids') and sim.zealot_ids:
                 zealot_mask[sim.zealot_ids] = True
@@ -201,23 +201,23 @@ class SensitivityMetrics:
             non_zealot_opinions = sim.opinions[non_zealot_mask]
             non_zealot_identities = sim.identities[non_zealot_mask]
             
-            # 分别计算每个身份组的方差
+            # Calculate variance for each identity group separately
             variance_identity_1 = 0.0
             variance_identity_neg1 = 0.0
             
-            # 计算 identity=1 群体的方差
+            # Calculate variance of identity=1 group
             identity_1_mask = non_zealot_identities == 1
-            if np.sum(identity_1_mask) > 1:  # 至少需要2个节点才能计算方差
+            if np.sum(identity_1_mask) > 1:  # Need at least 2 nodes to calculate variance
                 identity_1_opinions = non_zealot_opinions[identity_1_mask]
                 variance_identity_1 = float(np.var(identity_1_opinions))
             
-            # 计算 identity=-1 群体的方差
+            # Calculate variance of identity=-1 group
             identity_neg1_mask = non_zealot_identities == -1
-            if np.sum(identity_neg1_mask) > 1:  # 至少需要2个节点才能计算方差
+            if np.sum(identity_neg1_mask) > 1:  # Need at least 2 nodes to calculate variance
                 identity_neg1_opinions = non_zealot_opinions[identity_neg1_mask]
                 variance_identity_neg1 = float(np.var(identity_neg1_opinions))
             
-            # 计算两个群体方差的均值
+            # Calculate mean variance of the two groups
             variance_mean = (variance_identity_1 + variance_identity_neg1) / 2.0
             
             metrics['variance_per_identity_1'] = variance_identity_1
@@ -225,7 +225,7 @@ class SensitivityMetrics:
             metrics['variance_per_identity_mean'] = variance_mean
             
         except Exception as e:
-            warnings.warn(f"计算 variance per identity 指标时出错: {e}")
+            warnings.warn(f"Error calculating variance per identity metrics: {e}")
             metrics = {
                 'variance_per_identity_1': 0.0,
                 'variance_per_identity_neg1': 0.0,
@@ -235,24 +235,24 @@ class SensitivityMetrics:
         return metrics
     
     def _calculate_koudenburg_polarization(self, opinions: np.ndarray) -> float:
-        """计算Koudenburg极化指数"""
+        """Calculate Koudenburg polarization index"""
         try:
-            # 将意见离散化为5个类别
+            # Discretize opinions into 5 categories
             categories = np.zeros(len(opinions), dtype=int)
-            categories[opinions < -0.6] = 0  # 强烈反对
-            categories[(-0.6 <= opinions) & (opinions < -0.2)] = 1  # 反对
-            categories[(-0.2 <= opinions) & (opinions <= 0.2)] = 2  # 中立
-            categories[(0.2 < opinions) & (opinions <= 0.6)] = 3  # 支持
-            categories[opinions > 0.6] = 4  # 强烈支持
+            categories[opinions < -0.6] = 0  # Strongly oppose
+            categories[(-0.6 <= opinions) & (opinions < -0.2)] = 1  # Oppose
+            categories[(-0.2 <= opinions) & (opinions <= 0.2)] = 2  # Neutral
+            categories[(0.2 < opinions) & (opinions <= 0.6)] = 3  # Support
+            categories[opinions > 0.6] = 4  # Strongly support
             
-            # 计算各类别的数量
+            # Calculate count for each category
             n = np.bincount(categories, minlength=5)
             N = len(opinions)
             
             if N == 0:
                 return 0.0
             
-            # 计算极化指数
+            # Calculate polarization index
             numerator = (2.14 * n[1] * n[3] + 
                         2.70 * (n[0] * n[3] + n[1] * n[4]) + 
                         3.96 * n[0] * n[4])
@@ -264,17 +264,17 @@ class SensitivityMetrics:
             return numerator / denominator
             
         except Exception as e:
-            warnings.warn(f"计算Koudenburg极化指数时出错: {e}")
+            warnings.warn(f"Error calculating Koudenburg polarization index: {e}")
             return 0.0
     
     def _calculate_identity_polarization(self, opinions: np.ndarray, identities: np.ndarray) -> float:
-        """计算身份间极化差异"""
+        """Calculate polarization difference between identities"""
         try:
             unique_identities = np.unique(identities)
             if len(unique_identities) < 2:
                 return 0.0
             
-            # 计算每个身份群体的平均意见
+            # Calculate mean opinion for each identity group
             group_means = []
             for identity in unique_identities:
                 mask = identities == identity
@@ -284,56 +284,56 @@ class SensitivityMetrics:
             if len(group_means) < 2:
                 return 0.0
             
-            # 返回不同身份群体间平均意见的方差
+            # Return variance of mean opinions between different identity groups
             return np.var(group_means)
             
         except Exception as e:
-            warnings.warn(f"计算身份极化时出错: {e}")
+            warnings.warn(f"Error calculating identity polarization: {e}")
             return 0.0
     
     def _calculate_trajectory_length(self, sim: Simulation) -> float:
-        """计算意见轨迹长度"""
+        """Calculate opinion trajectory length"""
         try:
             if not hasattr(sim, 'opinion_history') or len(sim.opinion_history) < 2:
                 return 0.0
             
             total_length = 0.0
             for i in range(1, len(sim.opinion_history)):
-                # 计算每步的欧几里得距离
+                # Calculate Euclidean distance for each step
                 diff = sim.opinion_history[i] - sim.opinion_history[i-1]
                 step_length = np.sqrt(np.sum(diff**2))
                 total_length += step_length
             
-            # 归一化到Agent数量
+            # Normalize to agent count
             return total_length / len(sim.opinions)
             
         except Exception as e:
-            warnings.warn(f"计算轨迹长度时出错: {e}")
+            warnings.warn(f"Error calculating trajectory length: {e}")
             return 0.0
     
     def _calculate_oscillation_frequency(self, sim: Simulation) -> float:
-        """计算振荡频率"""
+        """Calculate oscillation frequency"""
         try:
             if not hasattr(sim, 'opinion_history') or len(sim.opinion_history) < 3:
                 return 0.0
             
             oscillations = 0
             for agent_idx in range(len(sim.opinions)):
-                # 计算每个Agent的方向变化次数
+                # Calculate direction change count for each agent
                 agent_history = [step[agent_idx] for step in sim.opinion_history]
                 direction_changes = 0
                 
                 for i in range(2, len(agent_history)):
-                    # 检查方向是否改变
+                    # Check if direction changed
                     prev_diff = agent_history[i-1] - agent_history[i-2]
                     curr_diff = agent_history[i] - agent_history[i-1]
                     
-                    if prev_diff * curr_diff < 0:  # 符号相反
+                    if prev_diff * curr_diff < 0:  # Opposite signs
                         direction_changes += 1
                 
                 oscillations += direction_changes
             
-            # 归一化
+            # Normalize
             total_steps = len(sim.opinion_history) - 2
             if total_steps > 0:
                 return oscillations / (len(sim.opinions) * total_steps)
@@ -341,13 +341,13 @@ class SensitivityMetrics:
                 return 0.0
                 
         except Exception as e:
-            warnings.warn(f"计算振荡频率时出错: {e}")
+            warnings.warn(f"Error calculating oscillation frequency: {e}")
             return 0.0
     
     def _calculate_group_divergence(self, sim: Simulation) -> float:
-        """计算群体分化度"""
+        """Calculate group divergence"""
         try:
-            # 计算不同身份群体间的意见差异
+            # Calculate opinion differences between different identity groups
             unique_identities = np.unique(sim.identities)
             if len(unique_identities) < 2:
                 return 0.0
@@ -361,7 +361,7 @@ class SensitivityMetrics:
             if len(group_opinions) < 2:
                 return 0.0
             
-            # 计算群体间的平均距离
+            # Calculate average distance between groups
             total_divergence = 0.0
             comparisons = 0
             
@@ -371,7 +371,7 @@ class SensitivityMetrics:
                     opinions_i = group_opinions[identities[i]]
                     opinions_j = group_opinions[identities[j]]
                     
-                    # 计算两个群体的平均意见差异
+                    # Calculate average opinion difference between two groups
                     mean_i = np.mean(opinions_i)
                     mean_j = np.mean(opinions_j)
                     divergence = abs(mean_i - mean_j)
@@ -382,17 +382,17 @@ class SensitivityMetrics:
             return total_divergence / comparisons if comparisons > 0 else 0.0
             
         except Exception as e:
-            warnings.warn(f"计算群体分化度时出错: {e}")
+            warnings.warn(f"Error calculating group divergence: {e}")
             return 0.0
     
     def _calculate_identity_variance_ratio(self, opinions: np.ndarray, identities: np.ndarray) -> float:
-        """计算身份内外方差比"""
+        """Calculate identity within/between variance ratio"""
         try:
             unique_identities = np.unique(identities)
             if len(unique_identities) < 2:
                 return 0.0
             
-            # 计算组内方差
+            # Calculate within-group variance
             within_group_var = 0.0
             total_count = 0
             
@@ -406,7 +406,7 @@ class SensitivityMetrics:
             if total_count > 0:
                 within_group_var /= total_count
             
-            # 计算组间方差
+            # Calculate between-group variance
             group_means = []
             for identity in unique_identities:
                 mask = identities == identity
@@ -415,31 +415,31 @@ class SensitivityMetrics:
             
             between_group_var = np.var(group_means) if len(group_means) > 1 else 0.0
             
-            # 计算方差比
+            # Calculate variance ratio
             if within_group_var > 0:
                 return between_group_var / within_group_var
             else:
                 return 0.0
                 
         except Exception as e:
-            warnings.warn(f"计算身份方差比时出错: {e}")
+            warnings.warn(f"Error calculating identity variance ratio: {e}")
             return 0.0
     
     def _calculate_cross_identity_correlation(self, opinions: np.ndarray, identities: np.ndarray) -> float:
-        """计算跨身份相关性"""
+        """Calculate cross-identity correlation"""
         try:
             unique_identities = np.unique(identities)
             if len(unique_identities) != 2:
                 return 0.0
             
-            # 获取两个身份群体的意见
+            # Get opinions of two identity groups
             group1_mask = identities == unique_identities[0]
             group2_mask = identities == unique_identities[1]
             
             group1_opinions = opinions[group1_mask]
             group2_opinions = opinions[group2_mask]
             
-            # 如果群体大小不同，取较小的大小进行比较
+            # If group sizes are different, use the smaller size for comparison
             min_size = min(len(group1_opinions), len(group2_opinions))
             if min_size < 2:
                 return 0.0
@@ -447,27 +447,27 @@ class SensitivityMetrics:
             group1_sample = group1_opinions[:min_size]
             group2_sample = group2_opinions[:min_size]
             
-            # 计算相关系数
+            # Calculate correlation coefficient
             correlation = np.corrcoef(group1_sample, group2_sample)[0, 1]
             
             return correlation if not np.isnan(correlation) else 0.0
             
         except Exception as e:
-            warnings.warn(f"计算跨身份相关性时出错: {e}")
+            warnings.warn(f"Error calculating cross-identity correlation: {e}")
             return 0.0
     
     def get_default_metrics(self) -> Dict[str, float]:
-        """返回默认的指标值（用于错误情况）"""
+        """Return default metric values (for error cases)"""
         return {name: 0.0 for name in self.metric_names}
     
     def validate_metrics(self, metrics: Dict[str, float]) -> Dict[str, float]:
-        """验证和清理指标值"""
+        """Validate and clean metric values"""
         validated = {}
         
         for name in self.metric_names:
             if name in metrics:
                 value = metrics[name]
-                # 检查是否为有效数值
+                # Check if it's a valid numeric value
                 if np.isnan(value) or np.isinf(value):
                     validated[name] = 0.0
                 else:
@@ -478,20 +478,20 @@ class SensitivityMetrics:
         return validated
     
     def get_metric_descriptions(self) -> Dict[str, str]:
-        """返回指标描述"""
+        """Return metric descriptions"""
         return {
-            'polarization_index': 'Koudenburg极化指数，衡量系统整体极化程度',
-            'opinion_variance': '意见方差，反映观点分散程度',
-            'extreme_ratio': '极端观点比例，|opinion| > 0.8的Agent比例',
-            'identity_polarization': '身份间极化差异，不同身份群体平均意见的方差',
-            'mean_abs_opinion': '平均绝对意见，系统观点强度',
-            'final_stability': '最终稳定性，最后阶段的变异系数',
-            'trajectory_length': '意见轨迹长度，观点变化的累积距离',
-            'oscillation_frequency': '振荡频率，观点方向改变的频次',
-            'group_divergence': '群体分化度，不同身份群体间的意见差异',
-            'identity_variance_ratio': '身份方差比，组间方差与组内方差的比值',
-            'cross_identity_correlation': '跨身份相关性，不同身份群体意见的相关系数',
-            'variance_per_identity_1': '身份群体1方差，identity=1群体内部的意见方差',
-            'variance_per_identity_neg1': '身份群体-1方差，identity=-1群体内部的意见方差',
-            'variance_per_identity_mean': '身份群体平均方差，两个身份群体方差的均值'
+            'polarization_index': 'Koudenburg polarization index, measures overall system polarization level',
+            'opinion_variance': 'Opinion variance, reflects opinion dispersion degree',
+            'extreme_ratio': 'Extreme opinion ratio, proportion of agents with |opinion| > 0.8',
+            'identity_polarization': 'Inter-identity polarization difference, variance of mean opinions across different identity groups',
+            'mean_abs_opinion': 'Mean absolute opinion, system opinion intensity',
+            'final_stability': 'Final stability, coefficient of variation in final stage',
+            'trajectory_length': 'Opinion trajectory length, cumulative distance of opinion changes',
+            'oscillation_frequency': 'Oscillation frequency, frequency of opinion direction changes',
+            'group_divergence': 'Group divergence, opinion differences between different identity groups',
+            'identity_variance_ratio': 'Identity variance ratio, ratio of between-group to within-group variance',
+            'cross_identity_correlation': 'Cross-identity correlation, correlation coefficient of opinions between different identity groups',
+            'variance_per_identity_1': 'Identity group 1 variance, opinion variance within identity=1 group',
+            'variance_per_identity_neg1': 'Identity group -1 variance, opinion variance within identity=-1 group',
+            'variance_per_identity_mean': 'Average identity group variance, mean of variances from both identity groups'
         } 

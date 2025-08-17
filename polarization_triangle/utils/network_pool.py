@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-网络池管理器
-用于批量生成、保存和加载LFR网络池，避免在仿真过程中重复生成网络
+Network pool manager
+Used for batch generation, saving and loading of LFR network pools, avoiding repeated network generation during simulations
 """
 
 import os
@@ -17,20 +17,20 @@ from pathlib import Path
 
 from .lfr_generator import generate_lfr_network
 
-# 设置日志
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class NetworkPool:
     """
-    网络池管理器
+    Network pool manager
     负责批量生成、保存和加载LFR网络
     """
     
     def __init__(self, pool_dir: str):
         """
-        初始化网络池管理器
+        初始化Network pool manager
         
         参数:
             pool_dir: 网络池存储目录
@@ -289,7 +289,7 @@ def create_default_pool(pool_dir: str, pool_size: int = 50) -> NetworkPool:
 
 if __name__ == "__main__":
     # 简单测试
-    print("测试网络池系统...")
+    print("Testing network pool system...")
     
     test_pool_dir = "./test_network_pool"
     pool = NetworkPool(test_pool_dir)
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     
     if success:
         # 测试加载
-        print("池信息:")
+        print("Pool info:")
         info = pool.get_pool_info()
         for key, value in info.items():
             print(f"  {key}: {value}")
@@ -307,7 +307,7 @@ if __name__ == "__main__":
         # 测试网络加载
         G = pool.load_network(index=0)
         if G:
-            print(f"成功加载网络: {G.number_of_nodes()}个节点, {G.number_of_edges()}条边")
+            print(f"Successfully loaded network: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
         
         # 清理测试文件
         import shutil

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-网络池生成脚本
-用于批量预生成LFR网络池，供后续仿真使用
+Network pool generation script
+Used for batch pre-generation of LFR network pools for subsequent simulations
 """
 
 import argparse
@@ -11,7 +11,7 @@ import os
 import sys
 from pathlib import Path
 
-# 添加项目根目录到路径
+# Add project root directory to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -20,69 +20,69 @@ from polarization_triangle.core.config import base_config
 
 
 def main():
-    parser = argparse.ArgumentParser(description="生成LFR网络池")
+    parser = argparse.ArgumentParser(description="Generate LFR network pool")
     parser.add_argument("--pool-dir", type=str, default="network_cache/default_pool",
-                        help="网络池存储目录（默认: network_cache/default_pool）")
+                        help="Network pool storage directory (default: network_cache/default_pool)")
     parser.add_argument("--pool-size", type=int, default=100,
-                        help="网络池大小（默认: 100）")
+                        help="Network pool size (default: 100)")
     parser.add_argument("--nodes", type=int, default=500,
-                        help="网络节点数量（默认: 500）")
+                        help="Number of network nodes (default: 500)")
     parser.add_argument("--mu", type=float, default=0.1,
-                        help="LFR混合参数mu（默认: 0.1）")
+                        help="LFR mixing parameter mu (default: 0.1)")
     parser.add_argument("--avg-degree", type=int, default=5,
-                        help="平均度数（默认: 5）")
+                        help="Average degree (default: 5)")
     parser.add_argument("--min-community", type=int, default=30,
-                        help="最小社区大小（默认: 30）")
+                        help="Minimum community size (default: 30)")
     parser.add_argument("--start-seed", type=int, default=42,
-                        help="起始随机种子（默认: 42）")
+                        help="Starting random seed (default: 42)")
     parser.add_argument("--skip-existing", action="store_true",
-                        help="跳过已存在的网络文件")
+                        help="Skip existing network files")
     parser.add_argument("--info", action="store_true",
-                        help="只显示已存在网络池的信息")
+                        help="Only display information about existing network pool")
     parser.add_argument("--list", action="store_true",
-                        help="列出池中所有网络")
+                        help="List all networks in pool")
     
     args = parser.parse_args()
     
-    # 如果只是查看信息
+    # If only viewing information
     if args.info or args.list:
         if not os.path.exists(args.pool_dir):
-            print(f"网络池目录不存在: {args.pool_dir}")
+            print(f"Network pool directory does not exist: {args.pool_dir}")
             return
         
         pool = NetworkPool(args.pool_dir)
         
         if args.info:
-            print("=== 网络池信息 ===")
+            print("=== Network Pool Information ===")
             info = pool.get_pool_info()
             for key, value in info.items():
                 print(f"{key}: {value}")
         
         if args.list:
-            print("\n=== 网络列表 ===")
+            print("\n=== Network List ===")
             networks = pool.list_networks()
-            print(f"{'ID':<12} {'节点数':<8} {'边数':<8} {'种子':<8} {'创建时间'}")
+            print(f"{'ID':<12} {'Nodes':<8} {'Edges':<8} {'Seed':<8} {'Created Time'}")
             print("-" * 60)
             for net in networks:
                 print(f"{net['id']:<12} {net['nodes']:<8} {net['edges']:<8} {net['seed']:<8} {net['created_at']}")
         
         return
     
-    # 生成网络池
-    print("=== LFR网络池生成器 ===")
-    print(f"存储目录: {args.pool_dir}")
-    print(f"池大小: {args.pool_size}")
-    print(f"节点数: {args.nodes}")
-    print(f"混合参数mu: {args.mu}")
-    print(f"平均度数: {args.avg_degree}")
-    print(f"最小社区: {args.min_community}")
-    print(f"起始种子: {args.start_seed}")
+    # Generate network pool
+    print("=== LFR Network Pool Generator ===")
+    print(f"Storage directory: {args.pool_dir}")
+    print(f"Pool size: {args.pool_size}")
+    print(f"Nodes: {args.nodes}")
+    print(f"Mixing parameter mu: {args.mu}")
+    print(f"Average degree: {args.avg_degree}")
+    print(f"Minimum community: {args.min_community}")
+    print(f"Starting Seed: {args.start_seed}")
     print()
     
-    # 创建网络池
+    # Create network pool
     pool = NetworkPool(args.pool_dir)
     
-    # 设置LFR参数
+    # Set LFR parameters
     lfr_params = {
         "n": args.nodes,
         "tau1": 3.0,
@@ -93,7 +93,7 @@ def main():
         "timeout": 60
     }
     
-    # 生成网络池
+    # Generate network pool
     success = pool.generate_pool(
         pool_size=args.pool_size,
         lfr_params=lfr_params,
@@ -102,27 +102,27 @@ def main():
     )
     
     if success:
-        print("\n=== 生成完成 ===")
+        print("\n=== Generation Complete ===")
         info = pool.get_pool_info()
-        print(f"成功生成 {info['total_networks']} 个网络")
-        print(f"存储位置: {info['pool_directory']}")
+        print(f"Successfully generated {info['total_networks']} networks")
+        print(f"Storage location: {info['pool_directory']}")
         
-        # 测试随机加载一个网络
+        # Test loading a random network
         G = pool.get_random_network()
         if G:
-            print(f"测试加载: 成功加载网络({G.number_of_nodes()}节点, {G.number_of_edges()}条边)")
+            print(f"Test loading: Successfully loaded network ({G.number_of_nodes()} nodes, {G.number_of_edges()} edges)")
     else:
-        print("网络池生成失败")
+        print("Network pool generation failed")
         sys.exit(1)
 
 
 def generate_default_pools():
     """
-    生成几个常用参数的默认网络池
+    Generate default network pools with commonly used parameters
     """
-    print("生成默认网络池...")
+    print("Generating default network pools...")
     
-    # 配置不同的参数组合
+    # Configure different parameter combinations
     pool_configs = [
         {"name": "default", "mu": 0.1, "nodes": 500, "size": 50},
         {"name": "high_mixing", "mu": 0.3, "nodes": 500, "size": 30},
@@ -131,7 +131,7 @@ def generate_default_pools():
     
     for config in pool_configs:
         pool_dir = f"network_cache/{config['name']}_pool"
-        print(f"生成 {config['name']} 池 (mu={config['mu']})...")
+        print(f"Generating {config['name']} pool (mu={config['mu']})...")
         
         pool = NetworkPool(pool_dir)
         lfr_params = {
@@ -143,9 +143,9 @@ def generate_default_pools():
         }
         
         pool.generate_pool(config["size"], lfr_params, skip_existing=True)
-        print(f"完成: {pool_dir}")
+        print(f"Completed: {pool_dir}")
     
-    print("所有默认网络池生成完成")
+    print("All default network pools generation completed")
 
 
 if __name__ == "__main__":

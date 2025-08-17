@@ -1,6 +1,6 @@
 """
-Sobol敏感性分析框架
-对极化三角框架中的关键参数(α, β, γ, cohesion_factor)进行敏感性分析
+Sobol sensitivity analysis framework
+Perform sensitivity analysis on key parameters (α, β, γ, cohesion_factor) in the polarization triangle framework
 """
 
 import numpy as np
@@ -31,39 +31,39 @@ from .sensitivity_metrics import SensitivityMetrics
 
 @dataclass
 class SobolConfig:
-    """Sobol敏感性分析配置"""
-    # 参数范围定义
+    """Sobol sensitivity analysis configuration"""
+    # Parameter range definition
     parameter_bounds: Dict[str, List[float]] = field(default_factory=lambda: {
-        'alpha': [0, 1],        # 自我激活系数
-        'beta': [0.0, 0.2],        # 社会影响系数  
-        'gamma': [0.2, 2.0],        # 道德化影响系数
-        'cohesion_factor': [0.0, 0.5]  # 身份凝聚力因子
+        'alpha': [0, 1],        # Self-activation coefficient
+        'beta': [0.0, 0.2],        # Social influence coefficient  
+        'gamma': [0.2, 2.0],        # Moralization influence coefficient
+        'cohesion_factor': [0.0, 0.5]  # Identity cohesion factor
     })
     
-    # 采样参数
-    n_samples: int = 1000           # 基础样本数，总样本数为 N * (2D + 2)
-    n_runs: int = 10                 # 每个参数组合运行次数
+    # Sampling parameters
+    n_samples: int = 1000           # Base sample number, total samples = N * (2D + 2)
+    n_runs: int = 10                 # Number of runs per parameter combination
     
-    # 模拟参数
+    # Simulation parameters
     base_config: Optional[SimulationConfig] = None
-    num_steps: int = 300            # 模拟步数
+    num_steps: int = 300            # Number of simulation steps
     
-    # 条件参数
-    structural_alignment: str = 'low'   # 'high' (cluster_identity=True) 或 'low' (cluster_identity=False)
-    morality_ratio: float = 0.0         # 道德化率: 0.0 或 0.3
+    # Condition parameters
+    structural_alignment: str = 'low'   # 'high' (cluster_identity=True) or 'low' (cluster_identity=False)
+    morality_ratio: float = 0.0         # Moralization rate: 0.0 or 0.3
     
-    # 计算参数
-    n_processes: int = 4            # 并行进程数
-    save_intermediate: bool = True   # 是否保存中间结果
-    output_dir: str = "sobol_results"  # 输出目录
+    # Computation parameters
+    n_processes: int = 4            # Number of parallel processes
+    save_intermediate: bool = True   # Whether to save intermediate results
+    output_dir: str = "sobol_results"  # Output directory
     
-    # 分析参数
-    confidence_level: float = 0.95   # 置信水平
-    bootstrap_samples: int = 1000     # Bootstrap样本数
+    # Analysis parameters
+    confidence_level: float = 0.95   # Confidence level
+    bootstrap_samples: int = 1000     # Bootstrap sample count
 
     def __post_init__(self):
         if self.base_config is None:
-            # 根据条件参数设置cluster_identity和morality_rate
+            # Set cluster_identity and morality_rate according to condition parameters
             cluster_identity_value = (self.structural_alignment == 'high')
             
             self.base_config = SimulationConfig(
@@ -78,7 +78,7 @@ class SobolConfig:
                 cluster_identity=cluster_identity_value,
                 cluster_morality=False,
                 cluster_opinion=False,
-                # Zealot配置
+                # Zealot configuration
                 zealot_count=30,
                 enable_zealots=True,
                 zealot_mode="random",
@@ -87,68 +87,68 @@ class SobolConfig:
                 use_network_pool=False
             )
         else:
-            # 如果提供了base_config，更新条件参数
+            # If base_config is provided, update condition parameters
             self.base_config.morality_rate = self.morality_ratio
             self.base_config.cluster_identity = (self.structural_alignment == 'high')
 
 
 class SobolAnalyzer:
-    """Sobol敏感性分析器"""
+    """Sobol sensitivity analyzer"""
     
     def __init__(self, config: SobolConfig):
         self.config = config
         self.param_names = list(config.parameter_bounds.keys())
         self.param_bounds = [config.parameter_bounds[name] for name in self.param_names]
         
-        # SALib问题定义
+        # SALib problem definition
         self.problem = {
             'num_vars': len(self.param_names),
             'names': self.param_names,
             'bounds': self.param_bounds
         }
         
-        # 创建输出目录
+        # Create output directory
         os.makedirs(config.output_dir, exist_ok=True)
         
-        # 结果存储
+        # Result storage
         self.param_samples = None
         self.simulation_results = None
         self.sensitivity_indices = None
         
-        # 初始化指标计算器
+        # Initialize metrics calculator
         self.metrics_calculator = SensitivityMetrics()
     
     def generate_samples(self) -> np.ndarray:
-        """生成Saltelli采样"""
+        """Generate Saltelli samples"""
         if saltelli is None:
             raise ImportError("SALib is required for Sobol analysis")
         
-        print(f"正在生成Saltelli样本...")
-        print(f"参数数量: {len(self.param_names)}")
-        print(f"基础样本数: {self.config.n_samples}")
-        print(f"总样本数: {self.config.n_samples * (2 * len(self.param_names) + 2)}")
+        print(f"Generating Saltelli samples...")
+        print(f"Parameter count: {len(self.param_names)}")
+        print(f"Base sample count: {self.config.n_samples}")
+        print(f"Total sample count: {self.config.n_samples * (2 * len(self.param_names) + 2)}")
         
         self.param_samples = saltelli.sample(self.problem, self.config.n_samples)
         
-        # 保存样本
+        # Save samples
         if self.config.save_intermediate:
             np.save(os.path.join(self.config.output_dir, 'param_samples.npy'), 
                    self.param_samples)
         
-        print(f"生成样本完成，形状: {self.param_samples.shape}")
+        print(f"Sample generation complete, shape: {self.param_samples.shape}")
         return self.param_samples
     
     def run_single_simulation(self, params: Dict[str, float]) -> Dict[str, float]:
-        """运行单次模拟"""
-        # 创建配置副本
+        """Run single simulation"""
+        # Create configuration copy
         config = copy.deepcopy(self.config.base_config)
         
-        # 设置参数
+        # Set parameters
         config.alpha = params['alpha']
         config.beta = params['beta'] 
         config.gamma = params['gamma']
         
-        # 处理cohesion_factor参数
+        # Handle cohesion_factor parameter
         if hasattr(config, 'network_params') and config.network_params:
             if isinstance(config.network_params, dict):
                 config.network_params = config.network_params.copy()
@@ -158,29 +158,29 @@ class SobolAnalyzer:
         else:
             config.network_params = {'cohesion_factor': params['cohesion_factor']}
         
-        # 运行多次取平均
+        # Run multiple times and take average
         all_metrics = []
         for run in range(self.config.n_runs):
             try:
-                # 创建并运行模拟
+                # Create and run simulation
                 sim = Simulation(config)
-                # 运行指定步数
+                # Run for specified steps
                 for _ in range(self.config.num_steps):
                     sim.step()
                 
-                # 计算指标
+                # Calculate metrics
                 metrics = self.metrics_calculator.calculate_all_metrics(sim)
                 all_metrics.append(metrics)
                 
             except Exception as e:
-                print(f"模拟运行失败: {e}")
+                print(f"Simulation run failed: {e}")
                 continue
         
         if not all_metrics:
-            # 如果所有运行都失败，返回默认值
+            # If all runs fail, return default values
             return self.metrics_calculator.get_default_metrics()
         
-        # 计算平均值
+        # Calculate average values
         avg_metrics = {}
         for key in all_metrics[0].keys():
             values = [m[key] for m in all_metrics if key in m and not np.isnan(m[key])]
@@ -192,10 +192,10 @@ class SobolAnalyzer:
         return avg_metrics
     
     def run_batch_simulations(self, param_samples: np.ndarray) -> List[Dict[str, float]]:
-        """批量运行模拟"""
-        print(f"开始运行 {len(param_samples)} 个参数组合的模拟...")
+        """Run batch simulations"""
+        print(f"Starting to run simulations for {len(param_samples)} parameter combinations...")
         
-        # 准备参数列表
+        # Prepare parameter list
         param_list = []
         for i, sample in enumerate(param_samples):
             params = {name: sample[j] for j, name in enumerate(self.param_names)}
@@ -204,31 +204,31 @@ class SobolAnalyzer:
         results = []
         
         if self.config.n_processes > 1:
-            # 并行执行
+            # Parallel execution
             with ProcessPoolExecutor(max_workers=self.config.n_processes) as executor:
-                # 提交任务
+                # Submit tasks
                 future_to_params = {
                     executor.submit(self.run_single_simulation, params): i 
                     for i, params in enumerate(param_list)
                 }
                 
-                # 收集结果
-                with tqdm(total=len(param_list), desc="执行模拟") as pbar:
+                # Collect results
+                with tqdm(total=len(param_list), desc="Executing simulations") as pbar:
                     for future in as_completed(future_to_params):
                         try:
                             result = future.result()
                             results.append(result)
                         except Exception as e:
-                            print(f"任务执行失败: {e}")
+                            print(f"Task execution failed: {e}")
                             results.append(self.metrics_calculator.get_default_metrics())
                         pbar.update(1)
         else:
-            # 串行执行
-            for params in tqdm(param_list, desc="执行模拟"):
+            # Serial execution
+            for params in tqdm(param_list, desc="Executing simulations"):
                 result = self.run_single_simulation(params)
                 results.append(result)
         
-        # 保存结果
+        # Save results
         if self.config.save_intermediate:
             with open(os.path.join(self.config.output_dir, 'simulation_results.pkl'), 'wb') as f:
                 pickle.dump(results, f)
@@ -237,41 +237,41 @@ class SobolAnalyzer:
         return results
     
     def calculate_sensitivity_indices(self, results: List[Dict[str, float]]) -> Dict[str, Dict]:
-        """计算Sobol敏感性指数"""
+        """Calculate Sobol sensitivity indices"""
         if sobol is None:
             raise ImportError("SALib is required for Sobol analysis")
         
-        print("计算Sobol敏感性指数...")
+        print("Calculating Sobol sensitivity indices...")
         
-        # 获取所有输出指标名称
+        # Get all output metric names
         output_names = list(results[0].keys())
         sensitivity_indices = {}
         
         for output_name in output_names:
             try:
-                # 提取该指标的所有值
+                # Extract all values for this metric
                 Y = np.array([r[output_name] for r in results])
                 
-                # 检查是否有有效值
+                # Check if there are valid values
                 if np.all(np.isnan(Y)) or np.all(Y == 0):
-                    print(f"警告: 指标 {output_name} 所有值都无效，跳过")
+                    print(f"Warning: All values for metric {output_name} are invalid, skipping")
                     continue
                 
-                # 计算Sobol指数
+                # Calculate Sobol indices
                 Si = sobol.analyze(self.problem, Y, print_to_console=False)
                 
-                # 存储结果
+                # Store results
                 sensitivity_indices[output_name] = {
-                    'S1': Si['S1'],           # 一阶敏感性指数
-                    'S1_conf': Si['S1_conf'], # 一阶敏感性置信区间
-                    'ST': Si['ST'],           # 总敏感性指数
-                    'ST_conf': Si['ST_conf'], # 总敏感性置信区间
-                    'S2': Si['S2'],           # 二阶交互效应
-                    'S2_conf': Si['S2_conf']  # 二阶交互效应置信区间
+                    'S1': Si['S1'],           # First-order sensitivity index
+                    'S1_conf': Si['S1_conf'], # First-order sensitivity confidence interval
+                    'ST': Si['ST'],           # Total sensitivity index
+                    'ST_conf': Si['ST_conf'], # Total sensitivity confidence interval
+                    'S2': Si['S2'],           # Second-order interaction effects
+                    'S2_conf': Si['S2_conf']  # Second-order interaction effects confidence interval
                 }
                 
             except Exception as e:
-                print(f"计算指标 {output_name} 的敏感性时出错: {e}")
+                print(f"Error calculating sensitivity for metric {output_name}: {e}")
                 continue
         
         # 保存结果
@@ -283,47 +283,47 @@ class SobolAnalyzer:
         return sensitivity_indices
     
     def run_complete_analysis(self) -> Dict[str, Dict]:
-        """运行完整的Sobol敏感性分析"""
+        """Run complete Sobol sensitivity analysis"""
         start_time = time.time()
         
         print("=" * 60)
-        print("开始Sobol敏感性分析")
+        print("Starting Sobol sensitivity analysis")
         print("=" * 60)
         
-        # 1. 生成参数样本
+        # 1. Generate parameter samples
         if self.param_samples is None:
             self.generate_samples()
         
-        # 2. 运行模拟
+        # 2. Run simulations
         if self.simulation_results is None:
             self.run_batch_simulations(self.param_samples)
         
-        # 3. 计算敏感性指数
+        # 3. Calculate sensitivity indices
         if self.sensitivity_indices is None:
             self.calculate_sensitivity_indices(self.simulation_results)
         
         end_time = time.time()
-        print(f"\n分析完成！总耗时: {end_time - start_time:.2f} 秒")
+        print(f"\nAnalysis complete! Total time: {end_time - start_time:.2f} seconds")
         
         return self.sensitivity_indices
     
     def load_results(self, results_dir: str = None) -> Dict[str, Dict]:
-        """加载已保存的分析结果"""
+        """Load saved analysis results"""
         if results_dir is None:
             results_dir = self.config.output_dir
         
-        # 加载参数样本
+        # Load parameter samples
         param_file = os.path.join(results_dir, 'param_samples.npy')
         if os.path.exists(param_file):
             self.param_samples = np.load(param_file)
         
-        # 加载模拟结果
+        # Load simulation results
         results_file = os.path.join(results_dir, 'simulation_results.pkl')
         if os.path.exists(results_file):
             with open(results_file, 'rb') as f:
                 self.simulation_results = pickle.load(f)
         
-        # 加载敏感性指数
+        # Load sensitivity indices
         sensitivity_file = os.path.join(results_dir, 'sensitivity_indices.pkl')
         if os.path.exists(sensitivity_file):
             with open(sensitivity_file, 'rb') as f:
@@ -332,9 +332,9 @@ class SobolAnalyzer:
         return self.sensitivity_indices
     
     def get_summary_table(self) -> pd.DataFrame:
-        """生成敏感性分析摘要表"""
+        """Generate sensitivity analysis summary table"""
         if self.sensitivity_indices is None:
-            raise ValueError("需要先运行敏感性分析")
+            raise ValueError("Need to run sensitivity analysis first")
         
         summary_data = []
         
@@ -353,16 +353,16 @@ class SobolAnalyzer:
         return pd.DataFrame(summary_data)
     
     def export_results(self, filename: str = None):
-        """导出结果为Excel文件"""
+        """Export results to Excel file"""
         if filename is None:
             filename = os.path.join(self.config.output_dir, 'sobol_results.xlsx')
         
         with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-            # 导出摘要表
+            # Export summary table
             summary_df = self.get_summary_table()
             summary_df.to_excel(writer, sheet_name='Summary', index=False)
             
-            # 导出详细的敏感性指数
+            # Export detailed sensitivity indices
             for output_name, indices in self.sensitivity_indices.items():
                 df_data = {
                     'Parameter': self.param_names,
@@ -372,39 +372,39 @@ class SobolAnalyzer:
                     'ST_conf': indices['ST_conf']
                 }
                 df = pd.DataFrame(df_data)
-                sheet_name = output_name[:31]  # Excel工作表名称限制
+                sheet_name = output_name[:31]  # Excel worksheet name limit
                 df.to_excel(writer, sheet_name=sheet_name, index=False)
         
-        print(f"结果已导出到: {filename}")
+        print(f"Results exported to: {filename}")
 
 
 def run_sobol_analysis_example():
-    """运行Sobol敏感性分析的示例"""
-    # 创建配置
+    """Run example of Sobol sensitivity analysis"""
+    # Create configuration
     config = SobolConfig(
-        n_samples=100,  # 小样本用于测试
+        n_samples=100,  # Small sample for testing
         n_runs=3,
         n_processes=2,
         output_dir="example_sobol_results"
     )
     
-    # 创建分析器
+    # Create analyzer
     analyzer = SobolAnalyzer(config)
     
-    # 运行分析
+    # Run analysis
     results = analyzer.run_complete_analysis()
     
-    # 生成摘要
+    # Generate summary
     summary = analyzer.get_summary_table()
-    print("\n敏感性分析摘要:")
+    print("\nSensitivity analysis summary:")
     print(summary.head(10))
     
-    # 导出结果
+    # Export results
     analyzer.export_results()
     
     return analyzer
 
 
 if __name__ == "__main__":
-    # 运行示例
+    # Run example
     analyzer = run_sobol_analysis_example() 

@@ -3,35 +3,35 @@ import numpy as np
 
 def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=False, window_size=5):
     """
-    绘制交互类型频率随时间的变化图。
+    Draw interaction type frequency change over time。
     
     参数:
-    rule_counts_history -- 包含每个时间步骤交互类型次数的列表，形状为(time_steps, 16)
+    rule_counts_history -- List containing interaction type counts for each time step, shape(time_steps, 16)
     title -- 图表标题
     filename -- 保存文件名
-    smooth -- 是否平滑曲线
-    window_size -- 平滑窗口大小
+    smooth -- Whether to smooth curves
+    window_size -- Smoothing window size
     """
-    # 转换为numpy数组
+    # Convert to numpy array
     rule_counts = np.array(rule_counts_history)
     
-    # 检查数组是否为空
+    # Check if array is empty
     if rule_counts.size == 0:
-        print("警告: 交互类型历史记录为空")
+        print("Warning: Interaction type history is empty")
         return
     
-    # 获取时间步数和交互类型数量
+    # Get number of time steps and interaction types
     time_steps = rule_counts.shape[0]
     num_rules = rule_counts.shape[1] if len(rule_counts.shape) > 1 else 0
     
     # 如果交互类型数量不符合预期，打印警告
     if num_rules != 16 and num_rules != 8:
-        print(f"警告: 交互类型数量({num_rules})不是预期的8或16")
+        print(f"Warning: Number of interaction types ({num_rules}) is not the expected 8 or 16")
     
-    # 准备时间轴
+    # Prepare time axis
     time = np.arange(time_steps)
     
-    # 交互类型名称 - 现在是16种交互类型
+    # Interaction type names - 现在是16种交互类型
     rule_names = [
         "Rule 1: Same dir, Same ID, {0,0}, High Convergence",
         "Rule 2: Same dir, Same ID, {0,1}, Medium Pull",
@@ -77,15 +77,15 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
     # 平滑数据（如果需要）
     if smooth and time_steps > window_size:
         for i in range(num_rules):
-            # 使用移动平均进行平滑
+            # Use moving average for smoothing
             smoothed = np.convolve(rule_counts[:, i], 
                                    np.ones(window_size)/window_size, 
                                    mode='valid')
-            # 调整时间轴以匹配平滑后的数据
+            # Adjust time axis to match smoothed data
             smoothed_time = np.arange(len(smoothed)) + window_size // 2
             plt.plot(smoothed_time, smoothed, label=rule_names[i], color=colors[i], linewidth=2)
     else:
-        # 不平滑处理
+        # No smoothing
         for i in range(num_rules):
             plt.plot(time, rule_counts[:, i], label=rule_names[i], color=colors[i], linewidth=2)
     
@@ -95,23 +95,23 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=2)
     plt.grid(True, alpha=0.3)
     
-    # 保存图表
+    # Save chart
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
 
-    # 额外创建一个堆叠面积图，显示交互类型的比例
+    # Additionally create a stacked area chart，showing interaction type proportions
     plt.figure(figsize=(14, 10))
     
-    # 计算每个时间步的交互类型总数
+    # Calculate total interaction types for each time step
     total_counts = np.sum(rule_counts, axis=1)
-    # 避免除以零
+    # Avoid division by zero
     total_counts = np.where(total_counts == 0, 1, total_counts)
     
-    # 计算交互类型的比例
+    # Calculate proportions of interaction types
     proportions = rule_counts / total_counts[:, np.newaxis]
     
-    # 创建堆叠面积图
+    # Create stacked area chart
     plt.stackplot(time, 
                  [proportions[:, i] for i in range(num_rules)],
                  labels=rule_names,
@@ -124,7 +124,7 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=2)
     plt.grid(True, alpha=0.3)
     
-    # 保存比例图
+    # Save proportion chart
     proportion_filename = filename.replace('.png', '_proportions.png')
     plt.tight_layout()
     plt.savefig(proportion_filename)
@@ -132,38 +132,38 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
 
 def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename, smooth=False, window_size=5):
     """
-    绘制交互类型累积次数随时间的变化图。
+    Draw interaction type cumulative count change over time。
     
     参数:
-    rule_counts_history -- 包含每个时间步骤交互类型次数的列表，形状为(time_steps, 16)
+    rule_counts_history -- List containing interaction type counts for each time step, shape(time_steps, 16)
     title -- 图表标题
     filename -- 保存文件名
-    smooth -- 是否平滑曲线
-    window_size -- 平滑窗口大小
+    smooth -- Whether to smooth curves
+    window_size -- Smoothing window size
     """
-    # 转换为numpy数组
+    # Convert to numpy array
     rule_counts = np.array(rule_counts_history)
     
-    # 检查数组是否为空
+    # Check if array is empty
     if rule_counts.size == 0:
-        print("警告: 交互类型历史记录为空")
+        print("Warning: Interaction type history is empty")
         return
     
-    # 获取时间步数和交互类型数量
+    # Get number of time steps and interaction types
     time_steps = rule_counts.shape[0]
     num_rules = rule_counts.shape[1] if len(rule_counts.shape) > 1 else 0
     
     # 如果交互类型数量不符合预期，打印警告
     if num_rules != 16 and num_rules != 8:
-        print(f"警告: 交互类型数量({num_rules})不是预期的8或16")
+        print(f"Warning: Number of interaction types ({num_rules}) is not the expected 8 or 16")
     
-    # 计算累积次数
+    # Calculate cumulative counts
     cumulative_counts = np.cumsum(rule_counts, axis=0)
     
-    # 准备时间轴
+    # Prepare time axis
     time = np.arange(time_steps)
     
-    # 交互类型名称 - 现在是16种交互类型
+    # Interaction type names - 现在是16种交互类型
     rule_names = [
         "Rule 1: Same dir, Same ID, {0,0}, High Convergence",
         "Rule 2: Same dir, Same ID, {0,1}, Medium Pull",
@@ -209,15 +209,15 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     # 平滑数据（如果需要）
     if smooth and time_steps > window_size:
         for i in range(num_rules):
-            # 使用移动平均进行平滑
+            # Use moving average for smoothing
             smoothed = np.convolve(cumulative_counts[:, i], 
                                    np.ones(window_size)/window_size, 
                                    mode='valid')
-            # 调整时间轴以匹配平滑后的数据
+            # Adjust time axis to match smoothed data
             smoothed_time = np.arange(len(smoothed)) + window_size // 2
             plt.plot(smoothed_time, smoothed, label=rule_names[i], color=colors[i], linewidth=2)
     else:
-        # 不平滑处理
+        # No smoothing
         for i in range(num_rules):
             plt.plot(time, cumulative_counts[:, i], label=rule_names[i], color=colors[i], linewidth=2)
     
@@ -227,15 +227,15 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=2)
     plt.grid(True, alpha=0.3)
     
-    # 保存图表
+    # Save chart
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
 
-    # 额外创建一个堆叠面积图，显示交互类型的比例
+    # Additionally create a stacked area chart，showing interaction type proportions
     plt.figure(figsize=(14, 10))
     
-    # 创建堆叠面积图
+    # Create stacked area chart
     plt.stackplot(time, 
                  [cumulative_counts[:, i] for i in range(num_rules)],
                  labels=rule_names,
@@ -248,12 +248,12 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=2)
     plt.grid(True, alpha=0.3)
     
-    # 保存堆叠图
+    # Save stacked chart
     stacked_filename = filename.replace('.png', '_stacked.png')
     plt.tight_layout()
     plt.savefig(stacked_filename)
     plt.close()
 
-# 为保持向后兼容性，保留原有函数名称
+# Keep original function names for backward compatibility
 draw_rule_usage = draw_interaction_type_usage
 draw_rule_cumulative_usage = draw_interaction_type_cumulative_usage

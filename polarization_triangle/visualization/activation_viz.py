@@ -4,22 +4,22 @@ from matplotlib.patches import Patch
 
 def draw_activation_components(sim, title, filename):
     """
-    绘制自我激活和社会影响组件的散点图和直方图
+    Draw scatter plots and histograms of self-activation and social influence components
     
-    参数:
-    sim -- 模拟对象，包含自我激活和社会影响数据
-    title -- 图表标题
-    filename -- 保存文件名
+    Parameters:
+    sim -- Simulation object containing self-activation and social influence data
+    title -- Chart title
+    filename -- Save filename
     """
-    # 获取最近一步的激活组件
+    # Get activation components from the most recent step
     components = sim.get_activation_components()
     self_activation = components["self_activation"]
     social_influence = components["social_influence"]
     
-    # 设置图形尺寸
+    # Set figure size
     plt.figure(figsize=(16, 12))
     
-    # 1. 散点图：自我激活 vs 社会影响
+    # 1. Scatter plot：Self activation vs Social influence
     plt.subplot(2, 2, 1)
     plt.scatter(self_activation, social_influence, c=sim.opinions, cmap='coolwarm', alpha=0.7)
     plt.colorbar(label='Opinion')
@@ -30,7 +30,7 @@ def draw_activation_components(sim, title, filename):
     plt.title('Self Activation vs Social Influence')
     plt.grid(True, alpha=0.3)
     
-    # 2. 散点图：自我激活 vs 社会影响（按身份着色）
+    # 2. Scatter plot：Self activation vs Social influence（colored by identity）
     plt.subplot(2, 2, 2)
     colors = ['#ff7f00' if iden == 1 else '#4daf4a' for iden in sim.identities]
     plt.scatter(self_activation, social_influence, c=colors, alpha=0.7)
@@ -47,7 +47,7 @@ def draw_activation_components(sim, title, filename):
     ]
     plt.legend(handles=patches)
     
-    # 3. 直方图：自我激活值分布
+    # 3. Histogram：Self activation值分布
     plt.subplot(2, 2, 3)
     plt.hist(self_activation, bins=30, alpha=0.7, color='green')
     plt.xlabel('Self Activation Value')
@@ -55,7 +55,7 @@ def draw_activation_components(sim, title, filename):
     plt.title('Distribution of Self Activation')
     plt.grid(True, alpha=0.3)
     
-    # 4. 直方图：社会影响值分布
+    # 4. Histogram：Social influence值分布
     plt.subplot(2, 2, 4)
     plt.hist(social_influence, bins=30, alpha=0.7, color='purple')
     plt.xlabel('Social Influence Value')
@@ -70,21 +70,21 @@ def draw_activation_components(sim, title, filename):
 
 def draw_activation_history(sim, title, filename):
     """
-    绘制自我激活和社会影响随时间的变化
+    绘制Self activation和Social influence随时间的变化
     
-    参数:
-    sim -- 模拟对象，包含自我激活和社会影响的历史数据
-    title -- 图表标题
-    filename -- 保存文件名
+    Parameters:
+    sim -- 模拟对象，包含Self activation和Social influence的历史数据
+    title -- Chart title
+    filename -- Save filename
     """
-    # 获取激活历史数据
+    # 获取activation history数据
     history = sim.get_activation_history()
     self_activation_history = history["self_activation_history"]
     social_influence_history = history["social_influence_history"]
     
     # 如果历史数据为空，则返回
     if not self_activation_history or len(self_activation_history) == 0:
-        print("警告: 激活历史数据为空")
+        print("警告: activation history数据为空")
         return
     
     # 将列表转换为NumPy数组以便计算
@@ -105,7 +105,7 @@ def draw_activation_history(sim, title, filename):
     # 创建图形
     plt.figure(figsize=(14, 10))
     
-    # 绘制自我激活平均值
+    # 绘制Self activation平均值
     plt.subplot(2, 1, 1)
     plt.plot(time_steps, self_activation_mean, 'g-', label='Mean Self Activation')
     # 添加标准差带
@@ -119,7 +119,7 @@ def draw_activation_history(sim, title, filename):
     plt.legend()
     plt.grid(True, alpha=0.3)
     
-    # 绘制社会影响平均值
+    # 绘制Social influence平均值
     plt.subplot(2, 1, 2)
     plt.plot(time_steps, social_influence_mean, 'b-', label='Mean Social Influence')
     # 添加标准差带
@@ -138,7 +138,7 @@ def draw_activation_history(sim, title, filename):
     plt.savefig(filename)
     plt.close()
     
-    # 额外绘制一个组合图，同时显示自我激活和社会影响的变化
+    # 额外绘制一个组合图，同时显示Self activation和Social influence的变化
     plt.figure(figsize=(14, 8))
     plt.plot(time_steps, self_activation_mean, 'g-', label='Mean Self Activation')
     plt.plot(time_steps, social_influence_mean, 'b-', label='Mean Social Influence')
@@ -156,14 +156,14 @@ def draw_activation_history(sim, title, filename):
 
 def draw_activation_heatmap(sim, title, filename):
     """
-    绘制自我激活和社会影响的热力图，显示这些值随意见和身份的分布
+    绘制Self activation和Social influence的heatmap，显示这些值随意见和身份的分布
     
-    参数:
-    sim -- 模拟对象，包含自我激活和社会影响数据
-    title -- 图表标题
-    filename -- 保存文件名
+    Parameters:
+    sim -- Simulation object containing self-activation and social influence data
+    title -- Chart title
+    filename -- Save filename
     """
-    # 获取最近一步的激活组件
+    # Get activation components from the most recent step
     components = sim.get_activation_components()
     self_activation = components["self_activation"]
     social_influence = components["social_influence"]
@@ -171,7 +171,7 @@ def draw_activation_heatmap(sim, title, filename):
     # 创建图形
     plt.figure(figsize=(16, 12))
     
-    # 1. 自我激活 vs 意见的热力图
+    # 1. Self activation vs 意见的heatmap
     plt.subplot(2, 2, 1)
     hb = plt.hexbin(sim.opinions, self_activation, gridsize=20, cmap='inferno', mincnt=1)
     plt.colorbar(hb, label='Count')
@@ -179,7 +179,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Self Activation')
     plt.title('Self Activation vs Opinion')
     
-    # 2. 社会影响 vs 意见的热力图
+    # 2. Social influence vs 意见的heatmap
     plt.subplot(2, 2, 2)
     hb = plt.hexbin(sim.opinions, social_influence, gridsize=20, cmap='inferno', mincnt=1)
     plt.colorbar(hb, label='Count')
@@ -187,7 +187,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Social Influence')
     plt.title('Social Influence vs Opinion')
     
-    # 3. 自我激活 + 社会影响 vs 意见的热力图
+    # 3. Self activation + Social influence vs 意见的heatmap
     plt.subplot(2, 2, 3)
     total_activation = self_activation + social_influence
     hb = plt.hexbin(sim.opinions, total_activation, gridsize=20, cmap='inferno', mincnt=1)
@@ -196,7 +196,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Total Activation')
     plt.title('Total Activation vs Opinion')
     
-    # 4. 自我激活 vs 社会影响的热力图
+    # 4. Self activation vs Social influence的heatmap
     plt.subplot(2, 2, 4)
     hb = plt.hexbin(self_activation, social_influence, gridsize=20, cmap='inferno', mincnt=1)
     plt.colorbar(hb, label='Count')
@@ -209,14 +209,14 @@ def draw_activation_heatmap(sim, title, filename):
     plt.savefig(filename)
     plt.close()
     
-    # 按身份分开绘制热力图
+    # 按身份分开绘制heatmap
     plt.figure(figsize=(16, 12))
     
     # 获取不同身份的agent索引
     identity_1_idx = np.where(sim.identities == 1)[0]
     identity_neg1_idx = np.where(sim.identities == -1)[0]
     
-    # 1. 自我激活 vs 意见（身份 = 1）
+    # 1. Self activation vs 意见（身份 = 1）
     plt.subplot(2, 2, 1)
     if len(identity_1_idx) > 0:
         hb = plt.hexbin(sim.opinions[identity_1_idx], self_activation[identity_1_idx], 
@@ -226,7 +226,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Self Activation')
     plt.title('Self Activation vs Opinion (Identity = 1)')
     
-    # 2. 社会影响 vs 意见（身份 = 1）
+    # 2. Social influence vs 意见（身份 = 1）
     plt.subplot(2, 2, 2)
     if len(identity_1_idx) > 0:
         hb = plt.hexbin(sim.opinions[identity_1_idx], social_influence[identity_1_idx], 
@@ -236,7 +236,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Social Influence')
     plt.title('Social Influence vs Opinion (Identity = 1)')
     
-    # 3. 自我激活 vs 意见（身份 = -1）
+    # 3. Self activation vs 意见（身份 = -1）
     plt.subplot(2, 2, 3)
     if len(identity_neg1_idx) > 0:
         hb = plt.hexbin(sim.opinions[identity_neg1_idx], self_activation[identity_neg1_idx], 
@@ -246,7 +246,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Self Activation')
     plt.title('Self Activation vs Opinion (Identity = -1)')
     
-    # 4. 社会影响 vs 意见（身份 = -1）
+    # 4. Social influence vs 意见（身份 = -1）
     plt.subplot(2, 2, 4)
     if len(identity_neg1_idx) > 0:
         hb = plt.hexbin(sim.opinions[identity_neg1_idx], social_influence[identity_neg1_idx], 
@@ -259,19 +259,19 @@ def draw_activation_heatmap(sim, title, filename):
     plt.suptitle(f'{title} - By Identity')
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # 为suptitle腾出空间
     
-    # 保存按身份分类的热力图
+    # 保存按身份分类的heatmap
     identity_filename = filename.replace('.png', '_by_identity.png')
     plt.savefig(identity_filename)
     plt.close()
     
-    # 按道德化值分开绘制热力图
+    # 按道德化值分开绘制heatmap
     plt.figure(figsize=(16, 12))
     
     # 获取不同道德化值的agent索引
     moral_1_idx = np.where(sim.morals == 1)[0]
     moral_0_idx = np.where(sim.morals == 0)[0]
     
-    # 1. 自我激活 vs 意见（道德化 = 1）
+    # 1. Self activation vs 意见（道德化 = 1）
     plt.subplot(2, 2, 1)
     if len(moral_1_idx) > 0:
         hb = plt.hexbin(sim.opinions[moral_1_idx], self_activation[moral_1_idx], 
@@ -281,7 +281,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Self Activation')
     plt.title('Self Activation vs Opinion (Morality = 1)')
     
-    # 2. 社会影响 vs 意见（道德化 = 1）
+    # 2. Social influence vs 意见（道德化 = 1）
     plt.subplot(2, 2, 2)
     if len(moral_1_idx) > 0:
         hb = plt.hexbin(sim.opinions[moral_1_idx], social_influence[moral_1_idx], 
@@ -291,7 +291,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Social Influence')
     plt.title('Social Influence vs Opinion (Morality = 1)')
     
-    # 3. 自我激活 vs 意见（道德化 = 0）
+    # 3. Self activation vs 意见（道德化 = 0）
     plt.subplot(2, 2, 3)
     if len(moral_0_idx) > 0:
         hb = plt.hexbin(sim.opinions[moral_0_idx], self_activation[moral_0_idx], 
@@ -301,7 +301,7 @@ def draw_activation_heatmap(sim, title, filename):
     plt.ylabel('Self Activation')
     plt.title('Self Activation vs Opinion (Morality = 0)')
     
-    # 4. 社会影响 vs 意见（道德化 = 0）
+    # 4. Social influence vs 意见（道德化 = 0）
     plt.subplot(2, 2, 4)
     if len(moral_0_idx) > 0:
         hb = plt.hexbin(sim.opinions[moral_0_idx], social_influence[moral_0_idx], 
@@ -314,29 +314,29 @@ def draw_activation_heatmap(sim, title, filename):
     plt.suptitle(f'{title} - By Morality')
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # 为suptitle腾出空间
     
-    # 保存按道德化值分类的热力图
+    # 保存按道德化值分类的heatmap
     morality_filename = filename.replace('.png', '_by_morality.png')
     plt.savefig(morality_filename)
     plt.close()
 
 def draw_activation_trajectory(sim, history, title, filename):
     """
-    绘制自我激活和社会影响的轨迹图，显示个别agent的激活组件随时间的变化
+    绘制Self activation和Social influence的trajectory图，显示个别agent的activation components随时间的变化
     
-    参数:
+    Parameters:
     sim -- 模拟对象
     history -- 意见历史数据，用于选择代表性的agent
-    title -- 图表标题
-    filename -- 保存文件名
+    title -- Chart title
+    filename -- Save filename
     """
-    # 获取激活历史数据
+    # 获取activation history数据
     activation_history = sim.get_activation_history()
     self_activation_history = activation_history["self_activation_history"]
     social_influence_history = activation_history["social_influence_history"]
     
     # 如果历史数据为空，则返回
     if not self_activation_history or len(self_activation_history) == 0:
-        print("警告: 激活历史数据为空")
+        print("警告: activation history数据为空")
         return
     
     # 将list转换为numpy数组
@@ -371,7 +371,7 @@ def draw_activation_trajectory(sim, history, title, filename):
     # 创建图形
     plt.figure(figsize=(14, 10))
     
-    # 1. 自我激活轨迹
+    # 1. Self activationtrajectory
     plt.subplot(2, 1, 1)
     for i, idx in enumerate(selected_indices):
         plt.plot(time_steps, self_activation_array[:, idx], 
@@ -384,7 +384,7 @@ def draw_activation_trajectory(sim, history, title, filename):
     plt.legend()
     plt.grid(True, alpha=0.3)
     
-    # 2. 社会影响轨迹
+    # 2. Social influencetrajectory
     plt.subplot(2, 1, 2)
     for i, idx in enumerate(selected_indices):
         plt.plot(time_steps, social_influence_array[:, idx], 
@@ -402,10 +402,10 @@ def draw_activation_trajectory(sim, history, title, filename):
     plt.savefig(filename)
     plt.close()
     
-    # 额外绘制一个对比图，显示意见、自我激活和社会影响的关系
+    # 额外绘制一个对比图，显示意见、Self activation和Social influence的关系
     plt.figure(figsize=(16, 12))
     
-    # 确保history列表和激活历史长度一致
+    # 确保history列表和activation history长度一致
     if history and len(history) > 0:
         # 可能需要裁剪历史数据，确保长度匹配
         min_length = min(len(time_steps), len(history))
@@ -462,7 +462,7 @@ def draw_activation_trajectory(sim, history, title, filename):
     plt.suptitle(f'{title} - Combined Trajectories')
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # 为suptitle腾出空间
     
-    # 保存组合轨迹图
+    # 保存组合trajectory图
     combined_filename = filename.replace('.png', '_combined.png')
     plt.savefig(combined_filename)
     plt.close()

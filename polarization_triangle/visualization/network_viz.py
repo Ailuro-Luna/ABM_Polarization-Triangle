@@ -8,25 +8,25 @@ import numpy as np
 
 def draw_network(sim, mode, title, filename):
     """
-    绘制网络图，使用形状区分zealot，边框区分道德化状态
+    Draw network graph, using shapes to distinguish zealots and borders to distinguish moralization states
     
-    参数:
-    sim -- simulation实例
-    mode -- 绘制模式：'opinion', 'identity', 'morality'
-    title -- 图表标题
-    filename -- 输出文件名
+    Parameters:
+    sim -- simulation instance
+    mode -- Drawing mode: 'opinion', 'identity', 'morality'
+    title -- Chart title
+    filename -- Output filename
     
-    可视化规则:
-    - 形状：Zealot=正方形，普通Agent=圆形
-    - 边框：道德化=有边框，非道德化=无边框
+    Visualization rules:
+    - Shape: Zealot=square, Regular Agent=circle
+    - Border: Moralized=with border, Non-moralized=no border
     """
     fig, ax = plt.subplots(figsize=(16, 10))
     
-    # 获取zealot信息
+    # Get zealot information
     zealot_ids = sim.get_zealot_ids() if hasattr(sim, 'get_zealot_ids') else []
     has_zealots = len(zealot_ids) > 0
     
-    # 设置节点大小
+    # Set node size
     node_size = 60
     
     # 根据mode设置颜色

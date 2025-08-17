@@ -40,13 +40,13 @@ TO SWITCH BETWEEN ERROR BAND TYPES:
 ===================================
 In the main function (if __name__ == "__main__":), find the section:
 
-    # ===== ERROR BANDS 配置：可通过注释/取消注释来切换 =====
-    # 方式1：标准差 error bands（均值 ± 标准差）
-    # error_band_type = 'std'  # 使用标准差方式
-    # 方式2：百分位数 error bands（25th-75th百分位数）
-    # error_band_type = 'percentile'  # 使用百分位数方式
-    # 方式3：置信区间 error bands（99%置信区间）
-    error_band_type = 'confidence'  # 使用置信区间方式
+    # ===== ERROR BANDS Configuration: Switch by commenting/uncommenting =====
+    # Method 1: Standard deviation error bands（均值 ± 标准差）
+    # error_band_type = 'std'  # Use standard deviation method
+    # Method 2: Percentile error bands（25th-75th百分位数）
+    # error_band_type = 'percentile'  # Use percentile method
+    # Method 3: Confidence interval error bands（99%置信区间）
+    error_band_type = 'confidence'  # Use confidence interval method
 
 To switch between types:
 1. Comment out all lines except the one you want to use
@@ -84,12 +84,12 @@ from polarization_triangle.utils.data_manager import ExperimentDataManager
 
 
 # =====================================
-# 数据平滑和重采样函数
+# Data smoothing and resampling functions
 # =====================================
 
 def resample_and_smooth_data(x_values, y_values, target_step=2, smooth_window=3):
     """
-    对数据进行重采样和平滑处理
+    Resample and smooth data
     
     Args:
         x_values: 原始x值数组，如[0,1,2,3,4,5,6,7,8,9,10,...]
@@ -1301,19 +1301,19 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
             # 为 zealot_numbers 添加 error bands
             if plot_type == 'zealot_numbers' and not enable_smoothing:
                 if error_band_type == 'std' and 'stds' in data:
-                    # 使用标准差方式（均值 ± 标准差）
+                    # Use standard deviation method（均值 ± 标准差）
                     means = data['means']
                     stds = data['stds']
                     draw_std_error_bands(x_values, means, stds, line_color, alpha=0.2)
                     
                 elif error_band_type == 'percentile' and 'lower_percentiles' in data and 'upper_percentiles' in data:
-                    # 使用百分位数方式（25th-75th百分位数）
+                    # Use percentile method（25th-75th百分位数）
                     lower_percentiles = data['lower_percentiles']
                     upper_percentiles = data['upper_percentiles']
                     draw_percentile_error_bands(x_values, lower_percentiles, upper_percentiles, line_color, alpha=0.2)
                     
                 elif error_band_type == 'confidence' and 'lower_ci' in data and 'upper_ci' in data:
-                    # 使用置信区间方式（99%置信区间）
+                    # Use confidence interval method（99%置信区间）
                     lower_ci = data['lower_ci']
                     upper_ci = data['upper_ci']
                     draw_confidence_interval_error_bands(x_values, lower_ci, upper_ci, line_color, alpha=0.2)
@@ -1878,13 +1878,13 @@ if __name__ == "__main__":
 
     plotting_start_time = time.time()
 
-    # ===== ERROR BANDS 配置：可通过注释/取消注释来切换 =====
-    # 方式1：标准差 error bands（均值 ± 标准差）
-    # error_band_type = 'std'  # 使用标准差方式
-    # 方式2：百分位数 error bands（25th-75th百分位数）
-    # error_band_type = 'percentile'  # 使用百分位数方式
-    # 方式3：置信区间 error bands（99%置信区间）
-    error_band_type = 'confidence'  # 使用置信区间方式
+    # ===== ERROR BANDS Configuration: Switch by commenting/uncommenting =====
+    # Method 1: Standard deviation error bands（均值 ± 标准差）
+    # error_band_type = 'std'  # Use standard deviation method
+    # Method 2: Percentile error bands（25th-75th百分位数）
+    # error_band_type = 'percentile'  # Use percentile method
+    # Method 3: Confidence interval error bands（99%置信区间）
+    error_band_type = 'confidence'  # Use confidence interval method
 
     plot_from_accumulated_data(
         output_dir="results/zealot_morality_analysis",

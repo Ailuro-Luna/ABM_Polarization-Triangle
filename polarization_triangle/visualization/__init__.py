@@ -1,6 +1,6 @@
 """
 Visualization module for Polarization Triangle Framework
-包含各种可视化工具，用于绘制模拟结果
+Contains various visualization tools for plotting simulation results
 """
 
 from .network_viz import draw_network

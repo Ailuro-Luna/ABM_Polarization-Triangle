@@ -22,14 +22,14 @@ from polarization_triangle.visualization.activation_viz import (
 
 def generate_rule_usage_plots(sim, title_prefix, output_dir):
     """
-    生成规则使用统计图
+    Generate rule usage statistics plots
     
-    参数:
-    sim -- simulation实例
-    title_prefix -- 图表标题前缀
-    output_dir -- 输出目录
+    Parameters:
+    sim -- simulation instance
+    title_prefix -- plot title prefix
+    output_dir -- output directory
     """
-    # 绘制规则使用统计图
+    # Draw rule usage statistics plot
     rule_usage_path = os.path.join(output_dir, f"{title_prefix}_interaction_types.png")
     draw_interaction_type_usage(
         sim.rule_counts_history,
@@ -37,7 +37,7 @@ def generate_rule_usage_plots(sim, title_prefix, output_dir):
         rule_usage_path
     )
     
-    # 绘制规则累积使用统计图
+    # Draw cumulative rule usage statistics plot
     rule_cumulative_path = os.path.join(output_dir, f"{title_prefix}_interaction_types_cumulative.png")
     draw_interaction_type_cumulative_usage(
         sim.rule_counts_history,
@@ -45,7 +45,7 @@ def generate_rule_usage_plots(sim, title_prefix, output_dir):
         rule_cumulative_path
     )
     
-    # 输出规则使用统计信息
+    # Output rule usage statistics information
     interaction_names = [
         "Rule 1: Same dir, Same ID, {0,0}, High Convergence",
         "Rule 2: Same dir, Same ID, {0,1}, Medium Pull",
@@ -65,40 +65,40 @@ def generate_rule_usage_plots(sim, title_prefix, output_dir):
         "Rule 16: Diff dir, Diff ID, {1,1}, Very High Polarization"
     ]
     
-    # 获取交互类型统计
+    # Get interaction type statistics
     interaction_stats = sim.get_interaction_counts()
     counts = interaction_stats["counts"]
     total_count = interaction_stats["total_interactions"]
     
-    # 将交互类型统计写入文件
+    # Write interaction type statistics to file
     stats_path = os.path.join(output_dir, f"{title_prefix}_interaction_types_stats.txt")
     with open(stats_path, "w") as f:
-        f.write(f"交互类型统计 - {title_prefix}\n")
+        f.write(f"Interaction type statistics - {title_prefix}\n")
         f.write("-" * 50 + "\n")
         for i, interaction_name in enumerate(interaction_names):
             count = counts[i]
             percent = (count / total_count) * 100 if total_count > 0 else 0
-            f.write(f"{interaction_name}: {count} 次 ({percent:.1f}%)\n")
+            f.write(f"{interaction_name}: {count} times ({percent:.1f}%)\n")
         f.write("-" * 50 + "\n")
-        f.write(f"总计: {total_count} 次\n")
+        f.write(f"Total: {total_count} times\n")
 
 
 def generate_activation_visualizations(sim, trajectory, title_prefix, output_dir):
     """
-    生成激活组件相关的可视化
+    Generate activation component related visualizations
     
-    参数:
-    sim -- simulation实例
-    trajectory -- 意见轨迹数据
-    title_prefix -- 图表标题前缀
-    output_dir -- 输出目录
+    Parameters:
+    sim -- simulation instance
+    trajectory -- opinion trajectory data
+    title_prefix -- plot title prefix
+    output_dir -- output directory
     """
-    # 创建激活组件子文件夹
+    # Create activation components subfolder
     activation_folder = os.path.join(output_dir, "activation_components")
     if not os.path.exists(activation_folder):
         os.makedirs(activation_folder)
     
-    # 1. 自我激活和社会影响散点图
+    # 1. Self-activation and social influence scatter plot
     components_path = os.path.join(activation_folder, f"{title_prefix}_activation_components.png")
     draw_activation_components(
         sim,
@@ -106,7 +106,7 @@ def generate_activation_visualizations(sim, trajectory, title_prefix, output_dir
         components_path
     )
     
-    # 2. 自我激活和社会影响随时间的变化
+    # 2. Change of self-activation and social influence over time
     history_path = os.path.join(activation_folder, f"{title_prefix}_activation_history.png")
     draw_activation_history(
         sim,
@@ -114,7 +114,7 @@ def generate_activation_visualizations(sim, trajectory, title_prefix, output_dir
         history_path
     )
     
-    # 3. 自我激活和社会影响的热力图
+    # 3. Heatmap of self-activation and social influence
     heatmap_path = os.path.join(activation_folder, f"{title_prefix}_activation_heatmap.png")
     draw_activation_heatmap(
         sim,
@@ -122,7 +122,7 @@ def generate_activation_visualizations(sim, trajectory, title_prefix, output_dir
         heatmap_path
     )
     
-    # 4. 选定agent的激活轨迹
+    # 4. Activation trajectory of selected agents
     trajectory_path = os.path.join(activation_folder, f"{title_prefix}_activation_trajectory.png")
     draw_activation_trajectory(
         sim,
@@ -131,7 +131,7 @@ def generate_activation_visualizations(sim, trajectory, title_prefix, output_dir
         trajectory_path
     )
     
-    # 5. 保存激活组件数据到CSV文件
+    # 5. Save activation component data to CSV file
     components = sim.get_activation_components()
     data_path = os.path.join(activation_folder, f"{title_prefix}_activation_data.csv")
     with open(data_path, "w") as f:
@@ -144,21 +144,21 @@ def generate_activation_visualizations(sim, trajectory, title_prefix, output_dir
 
 def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_dir):
     """
-    计算各种意见统计数据但不绘制图表
+    Calculate various opinion statistics without plotting
     
-    参数:
-    sim -- simulation实例
-    trajectory -- 意见轨迹数据
-    zealot_ids -- zealot的ID列表
-    mode_name -- 模式名称
-    results_dir -- 结果输出目录
+    Parameters:
+    sim -- simulation instance
+    trajectory -- opinion trajectory data
+    zealot_ids -- zealot ID list
+    mode_name -- mode name
+    results_dir -- result output directory
     
-    返回:
-    dict -- 包含各种统计数据的字典
+    Returns:
+    dict -- dictionary containing various statistical data
     """
     num_steps = len(trajectory)
     
-    # 1. 计算平均opinion和平均abs(opinion)
+    # 1. Calculate average opinion and average abs(opinion)
     mean_opinions = []
     mean_abs_opinions = []
     
@@ -166,16 +166,16 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
         mean_opinions.append(np.mean(step_opinions))
         mean_abs_opinions.append(np.mean(np.abs(step_opinions)))
     
-    # 2. 计算除zealot外的所有agent的opinion的方差
+    # 2. Calculate opinion variance of all agents excluding zealots
     non_zealot_var = []
     
     for step_opinions in trajectory:
-        # 创建除zealot外的所有agent的意见数组
+        # Create opinion array of all agents excluding zealots
         non_zealot_opinions = np.delete(step_opinions, zealot_ids) if zealot_ids else step_opinions
         non_zealot_var.append(np.var(non_zealot_opinions))
     
-    # 3. 计算所有cluster内部的agent（除了zealot）的opinion的方差
-    # 获取社区信息
+    # 3. Calculate opinion variance of agents within all clusters (excluding zealots)
+    # Get community information
     communities = {}
     for node in sim.graph.nodes():
         community = sim.graph.nodes[node].get("community")
@@ -186,46 +186,46 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
         communities[community].append(node)
     
     cluster_variances = []
-    # 新增：跟踪每个社区的方差历史
+    # New: track variance history for each community
     community_variance_history = {}
     
     for step_opinions in trajectory:
-        # 计算每个社区内部的方差，然后取平均值
+        # Calculate variance within each community, then take average
         step_cluster_vars = []
         
         for community_id, members in communities.items():
-            # 过滤掉zealot
+            # Filter out zealots
             community_non_zealots = [m for m in members if m not in zealot_ids]
-            if community_non_zealots:  # 确保社区中有非zealot的成员
+            if community_non_zealots:  # Ensure community has non-zealot members
                 community_opinions = step_opinions[community_non_zealots]
                 community_var = np.var(community_opinions)
                 step_cluster_vars.append(community_var)
                 
-                # 记录这个社区的方差
+                # Record this community's variance
                 if community_id not in community_variance_history:
                     community_variance_history[community_id] = []
                 community_variance_history[community_id].append(community_var)
             else:
-                # 如果社区内只有zealot，记录0方差
+                # If community has only zealots, record 0 variance
                 if community_id not in community_variance_history:
                     community_variance_history[community_id] = []
                 community_variance_history[community_id].append(0)
         
-        # 如果有有效的社区方差，计算平均值
+        # If there are valid community variances, calculate average
         if step_cluster_vars:
             cluster_variances.append(np.mean(step_cluster_vars))
         else:
             cluster_variances.append(0)
     
-    # 4. 统计持有negative opinion的个体的个数和negative opinion的均值
-    # 5. 统计持有positive opinion的个体的个数和positive opinion的均值
+    # 4. Count individuals with negative opinions and calculate mean of negative opinions
+    # 5. Count individuals with positive opinions and calculate mean of positive opinions
     negative_counts = []
     negative_means = []
     positive_counts = []
     positive_means = []
     
     for step_opinions in trajectory:
-        # 获取非zealot的意见
+        # Get opinions of non-zealots
         non_zealot_opinions = np.delete(step_opinions, zealot_ids) if zealot_ids else step_opinions
         
         # 统计负面意见

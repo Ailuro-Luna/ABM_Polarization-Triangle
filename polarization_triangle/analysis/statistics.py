@@ -5,18 +5,18 @@ from polarization_triangle.core.simulation import Simulation
 
 def calculate_mean_opinion(sim: Simulation, exclude_zealots: bool = True) -> Dict[str, float]:
     """
-    计算系统的平均意见统计
+    Calculate mean opinion statistics of the system
     
-    参数:
-    sim -- Simulation实例
-    exclude_zealots -- 是否排除zealots，默认为True
+    Parameters:
+    sim -- Simulation instance
+    exclude_zealots -- Whether to exclude zealots, default is True
     
-    返回:
-    包含平均意见统计的字典
+    Returns:
+    Dictionary containing mean opinion statistics
     """
     opinions = sim.opinions.copy()
     
-    # 如果需要排除zealots
+    # If need to exclude zealots
     if exclude_zealots and hasattr(sim, 'zealot_ids') and sim.zealot_ids:
         non_zealot_opinions = np.delete(opinions, sim.zealot_ids)
     else:
@@ -34,19 +34,19 @@ def calculate_mean_opinion(sim: Simulation, exclude_zealots: bool = True) -> Dic
 
 def calculate_variance_metrics(sim: Simulation, exclude_zealots: bool = True) -> Dict[str, float]:
     """
-    计算系统的方差指标
+    Calculate variance metrics of the system
     
-    参数:
-    sim -- Simulation实例
-    exclude_zealots -- 是否排除zealots，默认为True
+    Parameters:
+    sim -- Simulation instance
+    exclude_zealots -- Whether to exclude zealots, default is True
     
-    返回:
-    包含方差指标的字典
+    Returns:
+    Dictionary containing variance metrics
     """
     opinions = sim.opinions.copy()
     zealot_ids = sim.zealot_ids if hasattr(sim, 'zealot_ids') else []
     
-    # 计算整体方差（排除zealots）
+    # Calculate overall variance (excluding zealots)
     if exclude_zealots and zealot_ids:
         non_zealot_opinions = np.delete(opinions, zealot_ids)
     else:
@@ -54,7 +54,7 @@ def calculate_variance_metrics(sim: Simulation, exclude_zealots: bool = True) ->
     
     overall_variance = float(np.var(non_zealot_opinions))
     
-    # 计算社区内部方差
+    # Calculate variance within communities
     communities = {}
     for node in sim.graph.nodes():
         community = sim.graph.nodes[node].get("community")
@@ -67,18 +67,18 @@ def calculate_variance_metrics(sim: Simulation, exclude_zealots: bool = True) ->
             communities[community] = []
         communities[community].append(node)
     
-    # 计算每个社区的方差
+    # Calculate variance for each community
     community_variances = []
     community_stats = {}
     
     for community_id, members in communities.items():
-        # 过滤掉zealots
+        # Filter out zealots
         if exclude_zealots and zealot_ids:
             community_non_zealots = [m for m in members if m not in zealot_ids]
         else:
             community_non_zealots = members
             
-        if len(community_non_zealots) > 1:  # 至少需要2个agent才能计算方差
+        if len(community_non_zealots) > 1:  # Need at least 2 agents to calculate variance
             community_opinions = opinions[community_non_zealots]
             community_var = float(np.var(community_opinions))
             community_variances.append(community_var)
@@ -95,7 +95,7 @@ def calculate_variance_metrics(sim: Simulation, exclude_zealots: bool = True) ->
                 "mean_opinion": float(opinions[community_non_zealots[0]])
             }
     
-    # 平均社区内部方差
+    # Average intra-community variance
     mean_intra_community_variance = float(np.mean(community_variances)) if community_variances else 0.0
     
     return {
@@ -108,28 +108,28 @@ def calculate_variance_metrics(sim: Simulation, exclude_zealots: bool = True) ->
 
 def calculate_identity_statistics(sim: Simulation, exclude_zealots: bool = True) -> Dict[str, float]:
     """
-    计算按身份分组的统计指标
+    Calculate statistical metrics grouped by identity
     
-    参数:
-    sim -- Simulation实例
-    exclude_zealots -- 是否排除zealots，默认为True
+    Parameters:
+    sim -- Simulation instance
+    exclude_zealots -- Whether to exclude zealots, default is True
     
-    返回:
-    包含身份统计的字典
+    Returns:
+    Dictionary containing identity statistics
     """
     opinions = sim.opinions.copy()
     identities = sim.identities.copy()
     zealot_ids = sim.zealot_ids if hasattr(sim, 'zealot_ids') else []
     
-    # 找到不同身份的agents（排除zealots）
+    # Find agents of different identities (excluding zealots)
     unique_identities = np.unique(identities)
     identity_stats = {}
     
     for identity_val in unique_identities:
-        # 找到具有该身份的agents
+        # Find agents with this identity
         identity_agents = np.where(identities == identity_val)[0]
         
-        # 排除zealots
+        # Exclude zealots
         if exclude_zealots and zealot_ids:
             identity_agents = [agent for agent in identity_agents if agent not in zealot_ids]
         
@@ -144,10 +144,10 @@ def calculate_identity_statistics(sim: Simulation, exclude_zealots: bool = True)
                 "mean_abs_opinion": float(np.mean(np.abs(identity_opinions)))
             }
     
-    # 计算身份间的意见差异
+    # Calculate opinion differences between identities
     identity_values = [key for key in identity_stats.keys()]
     if len(identity_values) >= 2:
-        # 如果有identity +1和-1，计算它们的差异
+        # If there are identity +1 and -1, calculate their difference
         if "identity_1" in identity_stats and "identity_-1" in identity_stats:
             mean_diff = identity_stats["identity_1"]["mean_opinion"] - identity_stats["identity_-1"]["mean_opinion"]
             identity_stats["identity_difference"] = {
@@ -160,40 +160,40 @@ def calculate_identity_statistics(sim: Simulation, exclude_zealots: bool = True)
 
 def get_polarization_index(sim: Simulation) -> float:
     """
-    获取当前系统的极化指数
+    Get polarization index of current system
     
-    参数:
-    sim -- Simulation实例
+    Parameters:
+    sim -- Simulation instance
     
-    返回:
-    极化指数值
+    Returns:
+    Polarization index value
     """
     if hasattr(sim, 'calculate_polarization_index'):
         return float(sim.calculate_polarization_index())
     else:
-        # 如果simulation没有这个方法，我们自己实现
+        # If simulation doesn't have this method, we implement it ourselves
         opinions = sim.opinions
         
-        # 将观点离散化为5个类别
+        # Discretize opinions into 5 categories
         category_counts = np.zeros(5, dtype=np.int32)
         
         for opinion in opinions:
             if opinion < -0.6:
-                category_counts[0] += 1  # 类别1: 非常不同意
+                category_counts[0] += 1  # Category 1: Strongly disagree
             elif opinion < -0.2:
-                category_counts[1] += 1  # 类别2: 不同意
+                category_counts[1] += 1  # Category 2: Disagree
             elif opinion <= 0.2:
-                category_counts[2] += 1  # 类别3: 中立
+                category_counts[2] += 1  # Category 3: Neutral
             elif opinion <= 0.6:
-                category_counts[3] += 1  # 类别4: 同意
+                category_counts[3] += 1  # Category 4: Agree
             else:
-                category_counts[4] += 1  # 类别5: 非常同意
+                category_counts[4] += 1  # Category 5: Strongly agree
         
-        # 获取各类别Agent数量
+        # Get agent count for each category
         n1, n2, n3, n4, n5 = category_counts
         N = sim.num_agents
         
-        # 应用Koudenburg公式计算极化指数
+        # Apply Koudenburg formula to calculate polarization index
         numerator = (2.14 * n2 * n4 + 
                     2.70 * (n1 * n4 + n2 * n5) + 
                     3.96 * n1 * n5)

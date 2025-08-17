@@ -12,7 +12,7 @@ class Simulation:
         self.num_agents = config.num_agents
         self.network_type = config.network_type
 
-        # 创建网络
+        # Create network
         self.graph = create_network(
             num_agents=self.num_agents,
             network_type=config.network_type,
@@ -21,28 +21,28 @@ class Simulation:
             network_pool_dir=config.network_pool_dir,
             network_pool_random_selection=config.network_pool_random_selection
         )
-        # 移除自环
+        # Remove self-loops
         self.graph.remove_edges_from(nx.selfloop_edges(self.graph))
-        # 处理孤立节点
+        # Handle isolated nodes
         handle_isolated_nodes(self.graph)
-        # 获取邻接矩阵
+        # Get adjacency matrix
         self.adj_matrix = nx.adjacency_matrix(self.graph).toarray()
 
         self.pos = nx.spring_layout(self.graph, k=0.1, iterations=50, scale=2.0)
 
-        # 初始化聚类主导属性
+        # Initialize cluster dominant attributes
         self.cluster_identity_majority = {}
         self.cluster_morality_majority = {}
         self.cluster_opinion_majority = {} if config.cluster_opinion else None
 
-        # 初始化身份与议题关联映射
+        # Initialize identity-issue association mapping
         self.identity_issue_mapping = config.identity_issue_mapping
         self.identity_influence_factor = config.identity_influence_factor
 
-        # 初始化规则计数器历史记录
+        # Initialize rule counter history
         self.rule_counts_history = []
 
-        # 初始化zealot相关属性
+        # Initialize zealot-related attributes
         self.zealot_ids = []
         self.zealot_opinion = config.zealot_opinion
         self.enable_zealots = config.enable_zealots or config.zealot_count > 0
@@ -74,52 +74,52 @@ class Simulation:
                             majority_opinion = np.random.uniform(-1, 1)
                         self.cluster_opinion_majority[block] = majority_opinion
 
-        # 初始化代理属性
+        # Initialize agent attributes
         self.opinions = np.empty(self.num_agents, dtype=np.float64)
         self.morals = np.empty(self.num_agents, dtype=np.int32)
         self.identities = np.empty(self.num_agents, dtype=np.int32)
 
-        # 从配置中获取模型参数
-        self.delta = config.delta  # 意见衰减率
-        self.u = np.ones(self.num_agents) * config.u  # 意见激活系数
-        self.alpha = np.ones(self.num_agents) * config.alpha  # 自我激活系数
-        self.beta = config.beta  # 社会影响系数
-        self.gamma = np.ones(self.num_agents) * config.gamma  # 道德化影响系数
+        # Get model parameters from configuration
+        self.delta = config.delta  # Opinion decay rate
+        self.u = np.ones(self.num_agents) * config.u  # Opinion activation coefficient
+        self.alpha = np.ones(self.num_agents) * config.alpha  # Self-activation coefficient
+        self.beta = config.beta  # Social influence coefficient
+        self.gamma = np.ones(self.num_agents) * config.gamma  # Moralization influence coefficient
         
         self._init_identities()
         self._init_morality()
         self._init_opinions()
         
-        # 初始化zealots（必须在其他属性初始化之后）
+        # Initialize zealots (must be after other attributes initialization)
         if self.enable_zealots:
             self._init_zealots()
         
-        # 存储每个agent的邻居列表
+        # Store neighbor list for each agent
         self.neighbors_list = [[] for _ in range(self.num_agents)]
         
-        # 初始化邻居列表
+        # Initialize neighbor lists
         self._init_neighbors_lists()
         
-        # 初始化用于监控自我激活和社会影响的数组
+        # Initialize arrays for monitoring self-activation and social influence
         self.self_activation = np.zeros(self.num_agents, dtype=np.float64)
         self.social_influence = np.zeros(self.num_agents, dtype=np.float64)
         
-        # 存储历史数据
+        # Store historical data
         self.self_activation_history = []
         self.social_influence_history = []
         
-        # 添加轨迹存储
+        # Add trajectory storage
         self.opinion_trajectory = []
         
-        # 初始化极化指数历史
+        # Initialize polarization index history
         self.polarization_history = []
         
-        # 优化用的数据结构(CSR格式)
+        # Optimized data structure (CSR format)
         self._create_csr_neighbors()
 
     def _init_zealots(self):
         """
-        根据配置初始化zealots
+        Initialize zealots according to configuration
         """
         zealot_count = self.config.zealot_count
         zealot_mode = self.config.zealot_mode
@@ -127,9 +127,9 @@ class Simulation:
         if zealot_count <= 0:
             return
         
-        # 确定候选agent池
+        # Determine candidate agent pool
         if self.config.zealot_identity_allocation:
-            # 只从identity为1的agent中选择
+            # Select only from agents with identity=1
             candidate_agents = [i for i in range(self.num_agents) if self.identities[i] == 1]
             if len(candidate_agents) == 0:
                 print("Warning: No agents with identity=1 found for zealot allocation")
@@ -138,25 +138,25 @@ class Simulation:
                 zealot_count = len(candidate_agents)
                 print(f"Warning: zealot_count exceeds agents with identity=1, setting to {len(candidate_agents)}")
         else:
-            # 从所有agent中选择
+            # Select from all agents
             candidate_agents = list(range(self.num_agents))
             if zealot_count > self.num_agents:
                 zealot_count = self.num_agents
                 print(f"Warning: zealot_count exceeds agent count, setting to {self.num_agents}")
         
-        # 根据模式选择zealots
+        # Select zealots according to mode
         if zealot_mode == "random":
-            # 从候选池中随机选择指定数量的agent作为zealot
+            # Randomly select specified number of agents from candidate pool as zealots
             self.zealot_ids = np.random.choice(candidate_agents, size=zealot_count, replace=False).tolist()
         
         elif zealot_mode == "degree":
-            # 选择候选池中度数最高的节点作为zealot
+            # Select nodes with highest degree from candidate pool as zealots
             node_degrees = [(node, self.graph.degree(node)) for node in candidate_agents]
             sorted_nodes_by_degree = sorted(node_degrees, key=lambda x: x[1], reverse=True)
             self.zealot_ids = [node for node, degree in sorted_nodes_by_degree[:zealot_count]]
         
         elif zealot_mode == "clustered":
-            # 获取候选agents的社区信息
+            # Get community information for candidate agents
             communities = {}
             for node in candidate_agents:
                 community = self.graph.nodes[node].get("community")
@@ -166,17 +166,17 @@ class Simulation:
                     communities[community] = []
                 communities[community].append(node)
             
-            # 按社区大小排序
+            # Sort by community size
             sorted_communities = sorted(communities.items(), key=lambda x: len(x[1]), reverse=True)
             
-            # 尽量在同一社区内选择zealot
+            # Try to select zealots within the same community
             zealots_left = zealot_count
             self.zealot_ids = []
             for community_id, members in sorted_communities:
                 if zealots_left <= 0:
                     break
                 
-                # 决定从当前社区选择多少个zealot
+                # Decide how many zealots to select from current community
                 to_select = min(zealots_left, len(members))
                 selected = np.random.choice(members, size=to_select, replace=False).tolist()
                 self.zealot_ids.extend(selected)
@@ -185,18 +185,18 @@ class Simulation:
         else:
             raise ValueError(f"Unknown zealot mode: {zealot_mode}")
         
-        # 设置zealot的初始意见
+        # Set initial opinions for zealots
         for agent_id in self.zealot_ids:
             self.opinions[agent_id] = self.zealot_opinion
         
-        # 如果配置要求，将zealot设置为moralizing
+        # If configuration requires, set zealots to moralizing
         if self.config.zealot_morality:
             for agent_id in self.zealot_ids:
                 self.morals[agent_id] = 1
 
     def set_zealot_opinions(self):
         """
-        将zealot的意见重置为固定值
+        Reset zealot opinions to fixed values
         """
         if self.enable_zealots and self.zealot_ids:
             for agent_id in self.zealot_ids:
@@ -204,16 +204,16 @@ class Simulation:
 
     def get_zealot_ids(self) -> List[int]:
         """
-        获取zealot的ID列表
+        Get list of zealot IDs
         
-        返回:
-        zealot的ID列表
+        Returns:
+        List of zealot IDs
         """
         return self.zealot_ids.copy()
 
     def _create_csr_neighbors(self):
         """
-        创建CSR格式的邻居表示
+        Create CSR format neighbor representation
         """
         total_edges = sum(len(neighbors) for neighbors in self.neighbors_list)
         self.neighbors_indices = np.zeros(total_edges, dtype=np.int32)
@@ -287,11 +287,11 @@ class Simulation:
             else:
                 self.opinions[i] = self.generate_opinion(self.identities[i])
 
-        # # 应用身份与议题关联的偏移
+        # # Apply identity-topic association offset
         # for i in range(self.num_agents):
         #     identity = self.identities[i]
         #     association = self.identity_issue_mapping.get(identity, 0)
-        #     # 基于身份与议题关联添加偏移
+        #     # Add offset based on identity-topic association
         #     random_factor = np.random.uniform(0.5, 1.0)
         #     shift = association * random_factor
         #     self.opinions[i] = np.clip(self.opinions[i] + shift, -1, 1)
@@ -314,40 +314,40 @@ class Simulation:
             return np.random.uniform(-1, 1)
 
     def _init_neighbors_lists(self):
-        """初始化每个agent的邻居列表"""
+        """Initialize neighbor list for each agent"""
         for i in range(self.num_agents):
-            # 获取邻居列表
+            # Get neighbor list
             for j in range(self.num_agents):
                 if i != j and self.adj_matrix[i, j] > 0:
                     self.neighbors_list[i].append(j)
 
-    # 基于极化三角框架的感知意见计算
+    # Perceived opinion calculation based on polarization triangle framework
     def calculate_perceived_opinion(self, i, j):
         """
-        计算agent i对agent j的意见的感知
+        Calculate agent i's perception of agent j's opinion
         
-        参数:
-        i -- 观察者agent的索引
-        j -- 被观察agent的索引
+        Parameters:
+        i -- Observer agent's index
+        j -- Observed agent's index
         
-        返回:
-        感知意见值，取值为-1, 0, 或1
+        Returns:
+        Perceived opinion value, taking values -1, 0, or 1
         """
         return calculate_perceived_opinion_func(self.opinions, self.morals, i, j)
 
-    # 计算代理间关系系数
+    # Calculate relationship coefficient between agents
     def calculate_relationship_coefficient(self, i, j):
         """
-        计算agent i与agent j之间的关系系数
+        Calculate relationship coefficient between agent i and agent j
         
-        参数:
-        i -- agent i的索引
-        j -- agent j的索引
+        Parameters:
+        i -- Agent i's index
+        j -- Agent j's index
         
-        返回:
-        关系系数值
+        Returns:
+        Relationship coefficient value
         """
-        # 计算同身份邻居的平均感知意见值
+        # Calculate average perceived opinion value of same-identity neighbors
         sigma_same_identity = calculate_same_identity_sigma_func(
             self.opinions, self.morals, self.identities, 
             self.neighbors_indices, self.neighbors_indptr, i)
@@ -364,40 +364,40 @@ class Simulation:
     
     def calculate_polarization_index(self):
         """
-        计算Koudenburg观点极化指数
+        Calculate Koudenburg opinion polarization index
         
-        返回:
-        极化指数值 (0-100)
+        Returns:
+        Polarization index value (0-100)
         """
-        # 1. 将观点离散化为5个类别
+        # 1. Discretize opinions into 5 categories
         category_counts = np.zeros(5, dtype=np.int32)
         
         for opinion in self.opinions:
             if opinion < -0.6:
-                category_counts[0] += 1  # 类别1: 非常不同意
+                category_counts[0] += 1  # Category 1: Strongly disagree
             elif opinion < -0.2:
-                category_counts[1] += 1  # 类别2: 不同意
+                category_counts[1] += 1  # Category 2: Disagree
             elif opinion <= 0.2:
-                category_counts[2] += 1  # 类别3: 中立
+                category_counts[2] += 1  # Category 3: Neutral
             elif opinion <= 0.6:
-                category_counts[3] += 1  # 类别4: 同意
+                category_counts[3] += 1  # Category 4: Agree
             else:
-                category_counts[4] += 1  # 类别5: 非常同意
+                category_counts[4] += 1  # Category 5: Strongly agree
         
-        # 2. 获取各类别Agent数量
+        # 2. Get agent count for each category
         n1, n2, n3, n4, n5 = category_counts
         N = self.num_agents
         
-        # 3. 应用Koudenburg公式计算极化指数
-        # 分子: 计算跨越中立点的意见对加权和
+        # 3. Apply Koudenburg formula to calculate polarization index
+        # Numerator: Calculate weighted sum of opinion pairs crossing neutral point
         numerator = (2.14 * n2 * n4 + 
                     2.70 * (n1 * n4 + n2 * n5) + 
                     3.96 * n1 * n5)
         
-        # 分母: 归一化因子
+        # Denominator: Normalization factor
         denominator = 0.0099 * (N ** 2)
         
-        # 计算极化指数
+        # Calculate polarization index
         if denominator > 0:
             polarization_index = numerator / denominator
         else:
@@ -405,20 +405,20 @@ class Simulation:
             
         return polarization_index
 
-    # 优化的step方法，基于极化三角框架
+    # Optimized step method based on polarization triangle framework
     def step(self):
         """
-        执行一步模拟，更新所有代理的意见
-        基于极化三角框架的动力学方程实现
-        使用numba加速的step_calculation函数
+        Execute one simulation step, update all agents' opinions
+        Implementation based on polarization triangle framework dynamics equations
+        Uses numba-accelerated step_calculation function
         """
-        # 初始化规则计数 (为了与原有代码兼容，虽然本方法不再使用规则)
+        # Initialize rule counts (for compatibility with original code, although this method no longer uses rules)
         rule_counts = np.zeros(16, dtype=np.int32)
         
-        # 记录当前意见到轨迹
+        # Record current opinions to trajectory
         self.opinion_trajectory.append(self.opinions.copy())
         
-        # 使用numba加速的函数进行主要计算
+        # Use numba-accelerated function for main calculation
         new_opinions, new_self_activation, new_social_influence, rule_counts = step_calculation(
             self.opinions,
             self.morals,
@@ -435,31 +435,31 @@ class Simulation:
             self.config.cohesion_factor
         )
         
-        # 更新状态
+        # Update states
         self.opinions = new_opinions
         self.self_activation = new_self_activation
         self.social_influence = new_social_influence
         
-        # 重置zealot的意见（必须在更新意见之后）
+        # Reset zealot opinions (must be after opinion update)
         self.set_zealot_opinions()
         
-        # 为了与原有代码兼容，存储规则计数
+        # Store rule counts for compatibility with original code
         self.rule_counts_history.append(rule_counts)
         
-        # 存储自我激活和社会影响的历史数据
+        # Store historical data of self-activation and social influence
         self.self_activation_history.append(self.self_activation.copy())
         self.social_influence_history.append(self.social_influence.copy())
         
-        # 计算并存储极化指数
+        # Calculate and store polarization index
         polarization = self.calculate_polarization_index()
         self.polarization_history.append(polarization)
     
     def get_activation_components(self):
         """
-        获取最近一步中的自我激活和社会影响组件
+        Get self-activation and social influence components from the latest step
         
-        返回:
-        字典，包含自我激活和社会影响的数组
+        Returns:
+        Dictionary containing arrays of self-activation and social influence
         """
         return {
             "self_activation": self.self_activation,
@@ -468,10 +468,10 @@ class Simulation:
     
     def get_activation_history(self):
         """
-        获取所有历史步骤的自我激活和社会影响组件
+        Get self-activation and social influence components for all historical steps
         
-        返回:
-        字典，包含自我激活和社会影响的历史数据列表
+        Returns:
+        Dictionary containing lists of historical data for self-activation and social influence
         """
         return {
             "self_activation_history": self.self_activation_history,
@@ -480,23 +480,23 @@ class Simulation:
     
     def get_polarization_history(self):
         """
-        获取所有历史步骤的极化指数
+        Get polarization index for all historical steps
         
-        返回:
-        极化指数历史列表
+        Returns:
+        List of polarization index history
         """
         return self.polarization_history
 
     def save_simulation_data(self, output_dir: str, prefix: str = 'sim_data') -> Dict[str, str]:
         """
-        保存模拟数据到文件，便于后续进行统计分析
+        Save simulation data to files for subsequent statistical analysis
         
-        参数:
-        output_dir -- 输出目录路径
-        prefix -- 文件名前缀
+        Parameters:
+        output_dir -- Output directory path
+        prefix -- File name prefix
         
-        返回:
-        包含所有保存文件路径的字典
+        Returns:
+        Dictionary containing all saved file paths
         """
 
         from polarization_triangle.utils.data_manager import save_simulation_data
@@ -504,42 +504,42 @@ class Simulation:
     
     def get_interaction_counts(self):
         """
-        获取交互类型的统计信息，包括交互描述
+        Get statistical information on interaction types, including interaction descriptions
         
-        返回:
-        字典，包含交互类型计数和描述
+        Returns:
+        Dictionary containing interaction type counts and descriptions
         """
-        # 总计数数组
+        # Total count array
         total_counts = np.sum(self.rule_counts_history, axis=0) if len(self.rule_counts_history) > 0 else np.zeros(16)
         
-        # 交互类型描述
+        # Interaction type descriptions
         interaction_descriptions = [
-            # 相同意见方向，相同身份
+            # Same opinion direction, same identity
             "Rule 1: Same dir, Same ID, {0,0}, High Convergence",
             "Rule 2: Same dir, Same ID, {0,1}, Medium Pull",
             "Rule 3: Same dir, Same ID, {1,0}, Medium Pull",
             "Rule 4: Same dir, Same ID, {1,1}, High Polarization",
-            # 相同意见方向，不同身份
+            # Same opinion direction, different identity
             "Rule 5: Same dir, Diff ID, {0,0}, Medium Convergence",
             "Rule 6: Same dir, Diff ID, {0,1}, Low Pull",
             "Rule 7: Same dir, Diff ID, {1,0}, Low Pull",
             "Rule 8: Same dir, Diff ID, {1,1}, Medium Polarization",
-            # 不同意见方向，相同身份
+            # Different opinion direction, same identity
             "Rule 9: Diff dir, Same ID, {0,0}, Very High Convergence",
             "Rule 10: Diff dir, Same ID, {0,1}, Medium Convergence/Pull",
             "Rule 11: Diff dir, Same ID, {1,0}, Low Resistance",
             "Rule 12: Diff dir, Same ID, {1,1}, Low Polarization",
-            # 不同意见方向，不同身份
+            # Different opinion direction, different identity
             "Rule 13: Diff dir, Diff ID, {0,0}, Low Convergence",
             "Rule 14: Diff dir, Diff ID, {0,1}, High Pull",
             "Rule 15: Diff dir, Diff ID, {1,0}, High Resistance",
             "Rule 16: Diff dir, Diff ID, {1,1}, Very High Polarization"
         ]
         
-        # 计算总数
+        # Calculate total count
         total_interactions = np.sum(total_counts)
         
-        # 构建结果字典
+        # Build result dictionary
         result = {
             "total_interactions": total_interactions,
             "counts": total_counts,

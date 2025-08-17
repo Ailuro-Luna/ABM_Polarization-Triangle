@@ -1,36 +1,36 @@
 """
-项目统一入口：调用以下三个模块（以及 all 汇总模式）：
+Project unified entry point: calls the following three modules (and all aggregated mode):
 1) experiments/zealot_morality_analysis.py
 2) experiments/zealot_parameter_sweep.py
 3) scripts/run_sobol_analysis.py
 
-用法示例（Windows PowerShell）：
-  一、极小测试（Smoke Test，用于快速验证能否跑通）
-    1) Zealot & Morality 分析（快速积累+绘图）
+Usage examples (Windows PowerShell):
+  I. Minimal test (Smoke Test, for quick validation)
+    1) Zealot & Morality analysis (quick accumulation + plotting)
        python -m polarization_triangle.main morality --mode full --runs 1 --max-zealots 4 --max-morality 4 --processes 1 --error-band-type std --no-smoothing
-       # 若已有数据仅绘图：
+       # For plotting only with existing data:
        python -m polarization_triangle.main morality --mode plot --error-band-type std --no-smoothing
 
-    2) 参数扫描（最小化开销）
+    2) Parameter sweep (minimized overhead)
        python -m polarization_triangle.main sweep --runs 1 --steps 50 --processes 1 --data-dir results/zealot_parameter_sweep_smoke
 
-    3) Sobol 敏感性分析（快速配置）
+    3) Sobol sensitivity analysis (quick configuration)
        python -m polarization_triangle.main sobol --config quick
 
-  二、正常测试（参考各模块默认参数）
-    1) Zealot & Morality 分析（默认参数）
+  II. Normal test (refer to default parameters of each module)
+    1) Zealot & Morality analysis (default parameters)
        python -m polarization_triangle.main morality --mode full --runs 5 --max-zealots 50 --max-morality 30 --processes 1 --error-band-type std --smoothing
 
-    2) 参数扫描（脚本默认参数）
+    2) Parameter sweep (script default parameters)
        python -m polarization_triangle.main sweep --runs 20 --steps 300 --data-dir results/zealot_parameter_sweep
 
-    3) Sobol 敏感性分析（standard 预设）
+    3) Sobol sensitivity analysis (standard preset)
        python -m polarization_triangle.main sobol --config standard
 
-  三、All 模式（一次性串行运行三类测试）
-    - 极小测试：
+  III. All mode (run all three types of tests sequentially at once)
+    - Minimal test:
       python -m polarization_triangle.main all --profile smoke --processes 1
-    - 正常测试：
+    - Normal test:
       python -m polarization_triangle.main all --profile normal
 """
 
@@ -49,7 +49,7 @@ from polarization_triangle.experiments.zealot_morality_analysis import (
 
 
 # ==========================
-# 通用工具与配置
+# Common tools and configuration
 # ==========================
 
 def time_exec(label: str, func, *args, **kwargs):
@@ -57,16 +57,16 @@ def time_exec(label: str, func, *args, **kwargs):
     try:
         result = func(*args, **kwargs)
         duration = time.time() - start_ts
-        print(f"\n⏱️ {label} 命令耗时: {duration:.2f}s")
+        print(f"\n⏱️ {label} command execution time: {duration:.2f}s")
         return True, None, duration, result
     except Exception as e:
         duration = time.time() - start_ts
-        print(f"\n⏱️ {label} 命令耗时: {duration:.2f}s (失败)")
+        print(f"\n⏱️ {label} command execution time: {duration:.2f}s (failed)")
         return False, str(e), duration, None
 
 
 def build_sobol_custom_config(args):
-    # 如命令行提供覆盖项，则构造自定义配置返回；否则返回 None
+    # If command line provides override items, construct custom configuration and return; otherwise return None
     if any([getattr(args, k, None) for k in ("output_dir", "n_samples", "n_runs", "n_processes")]):
         from polarization_triangle.scripts.run_sobol_analysis import create_analysis_configs
         from polarization_triangle.analysis.sobol_analysis import SobolConfig
@@ -85,56 +85,56 @@ def build_sobol_custom_config(args):
 def print_all_summary(results, total_elapsed: float):
     # results: [(label, success, error, duration)]
     print("\n" + "=" * 60)
-    print("ALL 模式执行结果汇总")
+    print("ALL mode execution summary")
     print("=" * 60)
     overall = True
     for label, success, error, duration in results:
-        print(f"{label}: {'成功' if success else '失败'}" + (f"，错误: {error}" if not success and error else ""))
-        print(f"  耗时: {duration:.2f}s" if isinstance(duration, (int, float)) else "  耗时: N/A")
+        print(f"{label}: {'success' if success else 'failed'}" + (f", error: {error}" if not success and error else ""))
+        print(f"  Duration: {duration:.2f}s" if isinstance(duration, (int, float)) else "  Duration: N/A")
         overall = overall and success
     print("-" * 60)
-    print(f"总体结果: {'全部成功' if overall else '存在失败'}")
-    print(f"总耗时: {total_elapsed:.2f}s")
+    print(f"Overall result: {'all successful' if overall else 'some failed'}")
+    print(f"Total duration: {total_elapsed:.2f}s")
 
 
 def add_morality_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "morality",
-        help="运行或绘制 Zealot & Morality 分析",
+        help="Run or plot Zealot & Morality analysis",
     )
     parser.add_argument(
         "--mode",
         choices=["full", "accumulate", "plot", "no-zealot"],
         default="full",
-        help="运行模式：full=先积累数据再绘图；accumulate=只积累；plot=只绘图；no-zealot=仅收集无zealot数据",
+        help="Run mode: full=accumulate data then plot; accumulate=accumulate only; plot=plot only; no-zealot=collect only non-zealot data",
     )
     parser.add_argument(
         "--output-dir",
         type=str,
         default="results/zealot_morality_analysis",
-        help="输出目录",
+        help="Output directory",
     )
-    parser.add_argument("--runs", type=int, default=5, help="每个参数点的运行次数")
-    parser.add_argument("--max-zealots", type=int, default=50, help="最大 zealot 数量（仅 full/accumulate 模式使用）")
-    parser.add_argument("--max-morality", type=int, default=30, help="最大 morality ratio %（full/accumulate/no-zealot 使用）")
-    parser.add_argument("--processes", type=int, default=1, help="并行进程数")
+    parser.add_argument("--runs", type=int, default=5, help="Number of runs per parameter point")
+    parser.add_argument("--max-zealots", type=int, default=50, help="Maximum zealot number (used only in full/accumulate modes)")
+    parser.add_argument("--max-morality", type=int, default=30, help="Maximum morality ratio % (used in full/accumulate/no-zealot)")
+    parser.add_argument("--processes", type=int, default=1, help="Number of parallel processes")
 
-    # 绘图/误差带与平滑配置（plot 或 full 的绘图阶段会用到）
+    # Plotting/error band and smoothing configuration (used in plot or full plotting phases)
     parser.add_argument(
         "--error-band-type",
         choices=["std", "percentile", "confidence"],
         default="std",
-        help="zealot_numbers 图的 error bands 类型（plot 或 full 的绘图阶段）",
+        help="Error bands type for zealot_numbers plots (plot or full plotting phases)",
     )
-    parser.add_argument("--smoothing", dest="smoothing", action="store_true", help="morality_ratios 绘图启用平滑")
-    parser.add_argument("--no-smoothing", dest="smoothing", action="store_false", help="morality_ratios 绘图禁用平滑")
+    parser.add_argument("--smoothing", dest="smoothing", action="store_true", help="Enable smoothing for morality_ratios plotting")
+    parser.add_argument("--no-smoothing", dest="smoothing", action="store_false", help="Disable smoothing for morality_ratios plotting")
     parser.set_defaults(smoothing=True)
-    parser.add_argument("--step", type=int, default=2, help="重采样步长（用于平滑）")
+    parser.add_argument("--step", type=int, default=2, help="Resampling step size (for smoothing)")
     parser.add_argument(
         "--smooth-method",
         choices=["savgol", "moving_avg", "none"],
         default="savgol",
-        help="平滑方法",
+        help="Smoothing method",
     )
 
     parser.set_defaults(func=dispatch_morality)
@@ -204,18 +204,18 @@ from polarization_triangle.experiments.zealot_parameter_sweep import (
 def add_sweep_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "sweep",
-        help="运行 Zealot 参数扫描或仅从已有数据绘图",
+        help="Run Zealot parameter sweep or plot only from existing data",
     )
-    parser.add_argument("--plot-only", action="store_true", help="仅绘图模式：从已有数据生成图表")
-    parser.add_argument("--data-dir", type=str, default="results/zealot_parameter_sweep", help="数据目录/输出目录")
-    parser.add_argument("--runs", type=int, default=20, help="每种配置运行次数")
-    parser.add_argument("--steps", type=int, default=300, help="每次运行的模拟步数")
-    parser.add_argument("--initial-scale", type=float, default=0.1, help="初始意见缩放因子")
-    parser.add_argument("--base-seed", type=int, default=42, help="基础随机种子")
-    parser.add_argument("--processes", type=int, default=None, help="并行进程数（默认使用所有CPU核心）")
-    parser.add_argument("--max-size-mb", type=int, default=500, help="单个数据文件最大大小限制(MB)")
-    parser.add_argument("--no-optimize", action="store_true", help="禁用数据优化")
-    parser.add_argument("--essential-only", action="store_true", help="仅保留核心统计数据以节省内存")
+    parser.add_argument("--plot-only", action="store_true", help="Plot-only mode: generate plots from existing data")
+    parser.add_argument("--data-dir", type=str, default="results/zealot_parameter_sweep", help="Data directory/output directory")
+    parser.add_argument("--runs", type=int, default=20, help="Number of runs per configuration")
+    parser.add_argument("--steps", type=int, default=300, help="Number of simulation steps per run")
+    parser.add_argument("--initial-scale", type=float, default=0.1, help="Initial opinion scaling factor")
+    parser.add_argument("--base-seed", type=int, default=42, help="Base random seed")
+    parser.add_argument("--processes", type=int, default=None, help="Number of parallel processes (default: use all CPU cores)")
+    parser.add_argument("--max-size-mb", type=int, default=500, help="Maximum size limit for individual data file (MB)")
+    parser.add_argument("--no-optimize", action="store_true", help="Disable data optimization")
+    parser.add_argument("--essential-only", action="store_true", help="Keep only essential statistics to save memory")
 
     parser.set_defaults(func=dispatch_sweep)
 
@@ -251,21 +251,21 @@ from polarization_triangle.scripts.run_sobol_analysis import (
 def add_sobol_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "sobol",
-        help="运行 Sobol 敏感性分析或从已有结果生成报告",
+        help="Run Sobol sensitivity analysis or generate reports from existing results",
     )
     parser.add_argument(
         "--config",
         type=str,
         default="standard",
         choices=["quick", "standard", "high_precision", "full", "test1"],
-        help="预设配置",
+        help="Preset configuration",
     )
-    parser.add_argument("--load", action="store_true", help="尝试加载已有结果")
-    parser.add_argument("--no-plots", action="store_true", help="不生成可视化图表")
-    parser.add_argument("--output-dir", type=str, help="自定义输出目录（覆盖预设）")
-    parser.add_argument("--n-samples", type=int, help="自定义样本数（覆盖预设）")
-    parser.add_argument("--n-runs", type=int, help="自定义运行次数（覆盖预设）")
-    parser.add_argument("--n-processes", type=int, help="自定义进程数（覆盖预设）")
+    parser.add_argument("--load", action="store_true", help="Try to load existing results")
+    parser.add_argument("--no-plots", action="store_true", help="Do not generate visualization plots")
+    parser.add_argument("--output-dir", type=str, help="Custom output directory (override preset)")
+    parser.add_argument("--n-samples", type=int, help="Custom sample number (override preset)")
+    parser.add_argument("--n-runs", type=int, help="Custom run number (override preset)")
+    parser.add_argument("--n-processes", type=int, help="Custom process number (override preset)")
 
     parser.set_defaults(func=dispatch_sobol)
 
@@ -293,24 +293,24 @@ def dispatch_sobol(args: argparse.Namespace) -> None:
 def add_all_subparser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "all",
-        help="一次性运行 morality、sweep、sobol 三类测试",
+        help="Run morality, sweep, sobol three types of tests at once",
     )
     parser.add_argument(
         "--profile",
         choices=["smoke", "normal"],
         default="smoke",
-        help="测试档位：smoke=极小测试；normal=正常测试",
+        help="Test level: smoke=minimal test; normal=normal test",
     )
-    parser.add_argument("--processes", type=int, default=None, help="并行进程数（覆盖各子任务默认值）")
-    parser.add_argument("--output-dir-morality", type=str, default="results/zealot_morality_analysis", help="morality 输出目录")
-    parser.add_argument("--data-dir-sweep", type=str, default="results/zealot_parameter_sweep", help="sweep 输出/数据目录")
-    parser.add_argument("--sobol-config", type=str, default=None, help="sobol 配置（不设置则根据 profile 选择 quick/standard）")
+    parser.add_argument("--processes", type=int, default=None, help="Number of parallel processes (override default values of subtasks)")
+    parser.add_argument("--output-dir-morality", type=str, default="results/zealot_morality_analysis", help="morality output directory")
+    parser.add_argument("--data-dir-sweep", type=str, default="results/zealot_parameter_sweep", help="sweep output/data directory")
+    parser.add_argument("--sobol-config", type=str, default=None, help="sobol configuration (if not set, choose quick/standard based on profile)")
 
     parser.set_defaults(func=dispatch_all)
 
 
 def dispatch_all(args: argparse.Namespace) -> None:
-    # 配置档位
+    # Configuration profiles
     profiles = {
         "smoke": {
             "morality": {
@@ -340,10 +340,10 @@ def dispatch_all(args: argparse.Namespace) -> None:
     results = []
     total_start = time.time()
 
-    # Morality 任务
+    # Morality task
     def _morality_task():
         m = conf["morality"]
-        # 运行-积累
+        # Run and accumulate
         run_and_accumulate_data(
             output_dir=args.output_dir_morality,
             num_runs=m["num_runs"],
@@ -351,7 +351,7 @@ def dispatch_all(args: argparse.Namespace) -> None:
             max_morality=m["max_morality"],
             num_processes=(args.processes or 1),
         )
-        # 绘图
+        # Plotting
         plot_from_accumulated_data(
             output_dir=args.output_dir_morality,
             enable_smoothing=m["smoothing"],
@@ -363,7 +363,7 @@ def dispatch_all(args: argparse.Namespace) -> None:
     ok, err, dur, _ = time_exec("Morality", _morality_task)
     results.append(("Morality", ok, err, dur))
 
-    # Sweep 任务
+    # Sweep task
     def _sweep_task():
         w = conf["sweep"]
         run_zealot_parameter_sweep(
@@ -381,7 +381,7 @@ def dispatch_all(args: argparse.Namespace) -> None:
     ok, err, dur, _ = time_exec("Sweep", _sweep_task)
     results.append(("Sweep", ok, err, dur))
 
-    # Sobol 任务
+    # Sobol task
     def _sobol_task():
         sobol_cfg = args.sobol_config or conf["sobol"]
         analyzer, sensitivity_indices = run_sensitivity_analysis(
@@ -403,7 +403,7 @@ def dispatch_all(args: argparse.Namespace) -> None:
     print_all_summary(results, time.time() - total_start)
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Polarization-Triangle 项目统一入口",
+        description="Polarization-Triangle project unified entry point",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -412,7 +412,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_sweep_subparser(subparsers)
     add_sobol_subparser(subparsers)
 
-    # all 模式：一次性运行三类（morality / sweep / sobol）
+    # all mode: run three types at once (morality / sweep / sobol)
     add_all_subparser(subparsers)
 
     return parser
@@ -426,7 +426,7 @@ def main(argv=None) -> int:
 
 
 if __name__ == "__main__":
-    # Windows 下多进程需要放在 main 守卫中
+    # Multiprocessing on Windows needs to be in the main guard
     sys.exit(main())
 
 

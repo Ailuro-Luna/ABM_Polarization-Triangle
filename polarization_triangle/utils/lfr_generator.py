@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-LFR网络生成器
-用于批量生成和保存LFR网络，避免在仿真过程中重复生成导致卡死
+LFR Network Generator
+Used for batch generation and saving of LFR networks, avoiding repeated generation during simulations that could cause deadlocks
 """
 
 import networkx as nx
@@ -13,7 +13,7 @@ import time
 from typing import Dict, Any, Optional
 import logging
 
-# 设置日志
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -31,42 +31,42 @@ def generate_lfr_network(
     timeout: int = 60
 ) -> Optional[nx.Graph]:
     """
-    生成LFR基准网络
+    Generate LFR benchmark network
     
-    参数:
-        n: 节点数量
-        tau1: 度分布的幂律指数
-        tau2: 社区大小分布的幂律指数
-        mu: 混合参数（节点连接到其他社区的边的比例）
-        average_degree: 平均度数
-        min_community: 最小社区大小
-        max_community: 最大社区大小
-        seed: 随机种子
-        max_iters: 最大迭代次数
-        timeout: 超时时间（秒）
+    Parameters:
+        n: Number of nodes
+        tau1: Power law exponent for degree distribution
+        tau2: Power law exponent for community size distribution
+        mu: Mixing parameter (proportion of edges connecting nodes to other communities)
+        average_degree: Average degree
+        min_community: Minimum community size
+        max_community: Maximum community size
+        seed: Random seed
+        max_iters: Maximum number of iterations
+        timeout: Timeout duration (seconds)
         
-    返回:
-        成功时返回networkx.Graph对象，失败时返回None
+    Returns:
+        networkx.Graph object on success, None on failure
     """
-    logger.info(f"开始生成LFR网络: n={n}, mu={mu}, avg_degree={average_degree}")
+    logger.info(f"Starting LFR network generation: n={n}, mu={mu}, avg_degree={average_degree}")
     
     start_time = time.time()
     
     try:
-        # 参数验证
+        # Parameter validation
         if max_community is None:
             max_community = n // 2
             
-        # 确保参数合理
+        # Ensure parameters are reasonable
         if min_community > n // 2:
             min_community = n // 4
-            logger.warning(f"最小社区大小太大，调整为 {min_community}")
+            logger.warning(f"Minimum community size too large, adjusting to {min_community}")
             
         if max_community > n:
             max_community = n // 2
-            logger.warning(f"最大社区大小太大，调整为 {max_community}")
+            logger.warning(f"Maximum community size too large, adjusting to {max_community}")
         
-        # 生成LFR网络
+        # Generate LFR network
         G = nx.LFR_benchmark_graph(
             n=n,
             tau1=tau1,
@@ -79,67 +79,67 @@ def generate_lfr_network(
             seed=seed
         )
         
-        # 检查是否超时
+        # Check for timeout
         if time.time() - start_time > timeout:
-            logger.error(f"网络生成超时 ({timeout}秒)")
+            logger.error(f"Network generation timeout ({timeout} seconds)")
             return None
             
-        # 处理网络连通性
+        # Handle network connectivity
         if not nx.is_connected(G):
-            logger.info("网络不连通，正在修复连通性...")
+            logger.info("Network not connected, fixing connectivity...")
             _ensure_connectivity(G)
             
-        logger.info(f"网络生成完成: {G.number_of_nodes()}个节点, {G.number_of_edges()}条边, "
-                   f"用时{time.time() - start_time:.2f}秒")
+        logger.info(f"网络生成完成: {G.number_of_nodes()} nodes, {G.number_of_edges()}条边, "
+                   f"time taken{time.time() - start_time:.2f} seconds")
         
         return G
         
     except Exception as e:
-        logger.error(f"生成LFR网络时发生错误: {e}")
+        logger.error(f"Generate LFR network error occurred: {e}")
         return None
 
 
 
 def _ensure_connectivity(G: nx.Graph) -> None:
     """
-    确保网络连通性
-    将所有连通分量连接成一个连通网络
+    Ensure network connectivity
+    Connect all connected components into one connected network
     """
     import random
     
-    # 获取所有连通分量
+    # Get all connected components
     components = list(nx.connected_components(G))
     
     if len(components) <= 1:
-        return  # 网络已经连通
+        return  # Network is already connected
     
-    logger.info(f"发现 {len(components)} 个连通分量，正在连接...")
+    logger.info(f"Found {len(components)}  connected components, connecting...")
     
-    # 找到最大的连通分量作为主分量
+    # Find the largest connected component as main component
     largest_component = max(components, key=len)
     largest_nodes = list(largest_component)
     
-    # 将其他分量连接到主分量
+    # Connect other components to main component
     for component in components:
         if component == largest_component:
             continue
             
         component_nodes = list(component)
         
-        # 从当前分量随机选择1-2个节点
+        # Randomly select from current component1-2 nodes
         source_nodes = random.sample(component_nodes, min(2, len(component_nodes)))
         
-        # 从主分量随机选择对应数量的节点
+        # Randomly select corresponding number of nodes from main component
         target_nodes = random.sample(largest_nodes, len(source_nodes))
         
-        # 建立连接
+        # Establish connections
         for source, target in zip(source_nodes, target_nodes):
             G.add_edge(source, target)
-            logger.debug(f"连接分量: {source} -> {target}")
+            logger.debug(f"Connect components: {source} -> {target}")
     
-    # 验证连通性
+    # Verify connectivity
     if nx.is_connected(G):
-        logger.info(f"网络连通性修复完成，最终有 {G.number_of_edges()} 条边")
+        logger.info(f"Network connectivity repair completed, final {G.number_of_edges()} edges")
     else:
-        logger.warning("连通性修复可能失败，网络仍然不连通")
+        logger.warning("Connectivity repair may have failed, network still not connected")
 

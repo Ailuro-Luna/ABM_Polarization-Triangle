@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Sobol敏感性分析主执行脚本
-对极化三角框架的关键参数进行敏感性分析
+Sobol sensitivity analysis main execution script
+Performs sensitivity analysis on key parameters of the polarization triangle framework
 """
 
 import os
@@ -12,7 +12,7 @@ from pathlib import Path
 import json
 from datetime import datetime
 
-# 添加项目根目录到路径
+# Add project root directory to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -22,10 +22,10 @@ from polarization_triangle.core.config import SimulationConfig
 
 
 def create_analysis_configs(structural_alignment='low', morality_ratio=0.0):
-    """创建不同的分析配置"""
+    """Create different analysis configurations"""
     configs = {}
     
-    # 根据条件参数调整输出目录后缀
+    # Adjust output directory suffix based on condition parameters
     condition_suffix = f"_sa{structural_alignment}_mr{morality_ratio}"
     
     configs['quick'] = SobolConfig(
@@ -74,30 +74,30 @@ def create_analysis_configs(structural_alignment='low', morality_ratio=0.0):
 
 def save_parameter_record(analyzer: SobolAnalyzer, config_name: str, 
                          start_time: float, end_time: float = None):
-    """保存参数配置记录文件"""
+    """Save parameter configuration record file"""
     
-    print("保存参数配置记录...")
+    print("Saving parameter configuration record...")
     
-    # 创建记录文件路径
+    # Create record file path
     record_file_txt = os.path.join(analyzer.config.output_dir, "parameter_record.txt")
     record_file_json = os.path.join(analyzer.config.output_dir, "parameter_record.json")
     
-    # 获取当前时间
+    # Get current time
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # 计算总样本数
+    # Calculate total sample count
     total_samples = analyzer.config.n_samples * (2 * len(analyzer.param_names) + 2)
     total_simulations = total_samples * analyzer.config.n_runs
     total_steps = total_simulations * analyzer.config.num_steps
     
-    # 准备参数记录数据
+    # Prepare parameter record data
     record_data = {
         "analysis_info": {
             "config_name": config_name,
             "analysis_time": current_time,
             "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
-            "end_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time)) if end_time else "运行中",
-            "duration_seconds": end_time - start_time if end_time else "运行中",
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time)) if end_time else "Running",
+            "duration_seconds": end_time - start_time if end_time else "Running",
             "output_directory": analyzer.config.output_dir
         },
         "sobol_analysis_config": {
@@ -172,7 +172,7 @@ def save_parameter_record(analyzer: SobolAnalyzer, config_name: str,
         }
     }
     
-    # 保存JSON格式
+    # Save JSON format
     with open(record_file_json, 'w', encoding='utf-8') as f:
         json.dump(record_data, f, ensure_ascii=False, indent=2)
     

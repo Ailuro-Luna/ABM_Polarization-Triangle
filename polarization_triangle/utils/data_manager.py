@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-数据管理工具模块
-提供数据保存和加载的工具函数
+Data management utility module
+Provides utility functions for data saving and loading
 """
 
 import os
@@ -19,15 +19,15 @@ from datetime import datetime
 
 def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') -> Dict[str, str]:
     """
-    保存模拟数据到文件，便于后续进行统计分析
+    Save simulation data to files for subsequent statistical analysis
     
-    参数:
-    sim -- 模拟对象
-    output_dir -- 输出目录路径
-    prefix -- 文件名前缀
+    Parameters:
+    sim -- Simulation object
+    output_dir -- Output directory path
+    prefix -- Filename prefix
     
-    返回:
-    包含所有保存文件路径的字典
+    Returns:
+    Dictionary containing all saved file paths
     """
     # 创建目录（如果不存在）
     if not os.path.exists(output_dir):
@@ -121,24 +121,24 @@ def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') ->
 
 class ExperimentDataManager:
     """
-    实验数据管理器
+    Experiment Data Manager
     
-    专门用于zealot_morality_analysis实验的数据存储和读取，
-    优化存储空间和加载速度的平衡。
+    Specialized for zealot_morality_analysis experiment data storage and retrieval,
+    optimizing the balance between storage space and loading speed.
     
-    特点：
-    - 使用Parquet格式，平衡压缩率和读取速度
-    - 支持批次管理和数据累积
-    - 为并行计算预留接口
-    - 支持future variance per identity计算需求
+    Features:
+    - Uses Parquet format, balancing compression ratio and read speed
+    - Supports batch management and data accumulation
+    - Reserved interface for parallel computing
+    - Supports future variance per identity calculation needs
     """
     
     def __init__(self, base_dir: str = "results/zealot_morality_analysis"):
         """
-        初始化数据管理器
+        Initialize data manager
         
         Args:
-            base_dir: 基础存储目录
+            base_dir: Base storage directory
         """
         self.base_dir = Path(base_dir)
         self.data_dir = self.base_dir / "experiment_data"

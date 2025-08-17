@@ -1,4 +1,4 @@
-# 使用：
+# Usage:
 # python -m polarization_triangle.experiments.zealot_parameter_sweep --runs 10 --steps 300
 # python -m polarization_triangle.experiments.zealot_parameter_sweep --plot-only
 
@@ -21,13 +21,13 @@ from polarization_triangle.experiments.multi_zealot_experiment import run_multi_
 
 def get_object_size(obj):
     """
-    获取对象在内存中的大小（以字节为单位）
+    Get object size in memory (in bytes)
     
-    参数:
-    obj -- 要测量的对象
+    Parameters:
+    obj -- Object to measure
     
-    返回:
-    int -- 对象大小（字节）
+    Returns:
+    int -- Object size (bytes)
     """
     def get_size(obj, seen=None):
         size = sys.getsizeof(obj)
@@ -38,7 +38,7 @@ def get_object_size(obj):
         if obj_id in seen:
             return 0
         
-        # 标记已经处理过的对象
+        # Mark objects that have been processed
         seen.add(obj_id)
         
         if isinstance(obj, dict):
@@ -56,9 +56,9 @@ def get_object_size(obj):
 
 def format_size(size_bytes):
     """
-    格式化字节大小为人类可读的格式
+    Format byte size to human-readable format
     
-    参数:
+    Parameters:
     size_bytes -- 字节数
     
     返回:

@@ -1,6 +1,6 @@
 """
-敏感性分析结果可视化模块
-提供多种图表类型来展示Sobol敏感性分析结果
+Sensitivity analysis result visualization module
+Provides various chart types to display Sobol sensitivity analysis results
 """
 
 import numpy as np
@@ -15,26 +15,26 @@ try:
     import matplotlib.patches as patches
     from matplotlib.colors import LinearSegmentedColormap
 except ImportError:
-    warnings.warn("完整的可视化功能需要matplotlib")
+    warnings.warn("Complete visualization functionality requires matplotlib")
 
-# 尝试设置中文字体，如果失败则使用默认设置
+# Try to set Chinese fonts, use default settings if failed
 try:
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']  # 支持中文显示
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']  # Support Chinese display
     plt.rcParams['axes.unicode_minus'] = False
 except:
-    pass  # 如果设置失败，使用默认字体
+    pass  # If setting fails, use default fonts
 
 
 class SensitivityVisualizer:
-    """敏感性分析可视化器"""
+    """Sensitivity analysis visualizer"""
     
     def __init__(self, figsize: Tuple[int, int] = (12, 8)):
         self.figsize = figsize
         self.colors = {
-            'alpha': '#FF6B6B',      # 红色 - 自我激活
-            'beta': '#4ECDC4',       # 青色 - 社会影响  
-            'gamma': '#45B7D1',      # 蓝色 - 道德化影响
-            'cohesion_factor': '#96CEB4'  # 绿色 - 凝聚力因子
+            'alpha': '#FF6B6B',      # Red - self activation
+            'beta': '#4ECDC4',       # Cyan - social influence  
+            'gamma': '#45B7D1',      # Blue - moralization influence
+            'cohesion_factor': '#96CEB4'  # Green - cohesion factor
         }
         
         # 设置图表风格
@@ -43,9 +43,9 @@ class SensitivityVisualizer:
     
     def plot_sensitivity_comparison(self, sensitivity_indices: Dict[str, Dict], 
                                   output_name: str, save_path: str = None) -> plt.Figure:
-        """绘制单个输出指标的敏感性对比图"""
+        """Draw sensitivity comparison chart for single output metric"""
         if output_name not in sensitivity_indices:
-            raise ValueError(f"输出指标 {output_name} 不存在")
+            raise ValueError(f"Output metric {output_name} does not exist")
         
         indices = sensitivity_indices[output_name]
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
@@ -98,7 +98,7 @@ class SensitivityVisualizer:
     
     def plot_sensitivity_heatmap(self, sensitivity_indices: Dict[str, Dict], 
                                metric_type: str = 'ST', save_path: str = None) -> plt.Figure:
-        """绘制敏感性热力图"""
+        """Draw sensitivity heatmap"""
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
         output_names = list(sensitivity_indices.keys())
         
@@ -210,7 +210,7 @@ class SensitivityVisualizer:
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
         output_names = list(sensitivity_indices.keys())
         
-        # 计算每个参数在所有输出指标上的平均敏感性
+        # 计算每个参数在所有Output metric上的平均敏感性
         param_importance = {}
         for i, param in enumerate(param_names):
             importances = []
@@ -259,7 +259,7 @@ class SensitivityVisualizer:
         plot_files = {}
         
         try:
-            # 1. 为每个输出指标创建敏感性对比图
+            # 1. 为每个Output metric创建敏感性对比图
             for output_name in sensitivity_indices.keys():
                 filename = f"{output_name}_sensitivity.png"
                 filepath = os.path.join(output_dir, filename)

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-网络工具模块
-提供网络创建和处理的工具函数
+Network utility module
+Provides utility functions for network creation and processing
 """
 
 import networkx as nx
@@ -15,18 +15,18 @@ def create_network(num_agents: int, network_type: str, network_params: Dict[str,
                    use_network_pool: bool = True, network_pool_dir: str = None,
                    network_pool_random_selection: bool = True) -> nx.Graph:
     """
-    根据指定的类型和参数创建网络
+    Create network based on specified type and parameters
     
-    参数:
-    num_agents -- 代理数量
-    network_type -- 网络类型 ("random", "lfr", "community", "ws", "ba")
-    network_params -- 网络参数字典
-    use_network_pool -- 是否使用网络池（仅对LFR网络有效）
-    network_pool_dir -- 网络池目录
-    network_pool_random_selection -- 是否随机选择网络池中的网络
+    Parameters:
+    num_agents -- Number of agents
+    network_type -- Network type ("random", "lfr", "community", "ws", "ba")
+    network_params -- Network parameters dictionary
+    use_network_pool -- Whether to use network pool (only effective for LFR networks)
+    network_pool_dir -- Network pool directory
+    network_pool_random_selection -- Whether to randomly select networks from pool
     
-    返回:
-    创建的networkx图对象
+    Returns:
+    Created networkx graph object
     """
     if network_params is None:
         network_params = {}
@@ -35,9 +35,9 @@ def create_network(num_agents: int, network_type: str, network_params: Dict[str,
         p = network_params.get("p", 0.1)
         return nx.erdos_renyi_graph(n=num_agents, p=p)
     elif network_type == 'lfr':
-        # 检查是否使用网络池
+        # Check whether to use network pool
         if use_network_pool and network_pool_dir:
-            print(f"从网络池加载LFR网络: {network_pool_dir}")
+            print(f"Loading LFR network from network pool: {network_pool_dir}")
             try:
                 from .network_pool import NetworkPool
                 pool = NetworkPool(network_pool_dir)
@@ -45,26 +45,26 @@ def create_network(num_agents: int, network_type: str, network_params: Dict[str,
                 if network_pool_random_selection:
                     G = pool.get_random_network()
                 else:
-                    G = pool.load_network(index=0)  # 加载第一个网络
+                    G = pool.load_network(index=0)  # Load first network
                 
                 if G is not None:
-                    # 检查节点数量是否匹配
+                    # Check if node count matches
                     if G.number_of_nodes() != num_agents:
-                        print(f"警告: 网络池中的网络节点数({G.number_of_nodes()})与配置不符({num_agents})")
+                        print(f"Warning: Number of nodes in network pool ({G.number_of_nodes()}) does not match configuration ({num_agents})")
                     return G
                 else:
-                    print("从网络池加载失败，回退到实时生成")
+                    print("Failed to load from network pool, falling back to real-time generation")
             except Exception as e:
-                print(f"网络池加载失败: {e}，回退到实时生成")
+                print(f"Network pool loading failed: {e}, falling back to real-time generation")
         
-        # 实时生成LFR网络（原有逻辑）
+        # Real-time LFR network generation (original logic)
         tau1 = network_params.get("tau1", 3)
         tau2 = network_params.get("tau2", 1.5)
         mu = network_params.get("mu", 0.1)
         average_degree = network_params.get("average_degree", 5)
         min_community = network_params.get("min_community", 10)
         seed = network_params.get("seed", 42)
-        # 可选快速失败与约束
+        # Optional fast failure with constraints
         max_iters = network_params.get("max_iters", 300)
         max_community = network_params.get("max_community")
         min_degree = network_params.get("min_degree")
@@ -101,37 +101,37 @@ def create_network(num_agents: int, network_type: str, network_params: Dict[str,
 
 def handle_isolated_nodes(G: nx.Graph) -> None:
     """
-    处理网络中的孤立点
+    Handle isolated nodes in network
     
     参数:
     G -- 网络图对象
     
-    处理方式:
-    1. 找出所有孤立点（度为0的节点）
-    2. 为每个孤立点随机连接到网络中的其他节点
+    Processing method:
+    1. Find all isolated nodes (nodes with degree 0)
+    2. Randomly connect each isolated node to other nodes in the network
     """
     isolated_nodes = [node for node, degree in dict(G.degree()).items() if degree == 0]
 
     if not isolated_nodes:
-        return  # 如果没有孤立点，直接返回
+        return  # If no isolated nodes, return directly
 
-    print(f"检测到 {len(isolated_nodes)} 个孤立点，进行处理...")
+    print(f"Detected {len(isolated_nodes)} isolated nodes, processing...")
 
-    # 获取非孤立节点列表
+    # Get list of non-isolated nodes
     non_isolated = [node for node in G.nodes() if node not in isolated_nodes]
 
     if not non_isolated:
-        # 如果所有节点都是孤立的（极少情况），创建一个环形连接
+        # If all nodes are isolated (rare case), create a ring connection
         for i in range(len(isolated_nodes)):
             G.add_edge(isolated_nodes[i], isolated_nodes[(i + 1) % len(isolated_nodes)])
         return
 
-    # 为每个孤立点随机连接到1-3个非孤立节点
+    # Randomly connect each isolated node to 1-3 non-isolated nodes
     for node in isolated_nodes:
-        # 随机决定连接数量，最小1个，最大3个或所有非孤立节点数
+        # Randomly decide connection count, minimum 1, maximum 3 or all non-isolated nodes
         num_connections = min(np.random.randint(1, 4), len(non_isolated))
-        # 随机选择连接目标
+        # Randomly select connection targets
         targets = np.random.choice(non_isolated, num_connections, replace=False)
-        # 添加边
+        # Add edges
         for target in targets:
             G.add_edge(node, target)

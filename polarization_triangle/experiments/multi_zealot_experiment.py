@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-# plt.rcParams['font.sans-serif'] = ['SimHei']  # 或者 'Arial Unicode MS' 等
-# plt.rcParams['axes.unicode_minus'] = False  # 这是解决负号显示问题的关键设置
+# plt.rcParams['font.sans-serif'] = ['SimHei']  # Or 'Arial Unicode MS', etc.
+# plt.rcParams['axes.unicode_minus'] = False  # This is the key setting to solve negative sign display issues
 from tqdm import tqdm
 import copy
 import random
@@ -23,28 +23,28 @@ def run_multi_zealot_experiment(
     zealot_identity_allocation=True
 ):
     """
-    运行多次zealot实验，并计算平均结果
+    Run multiple zealot experiments and calculate average results
     
-    参数:
-    runs -- 运行次数
-    steps -- 每次运行的模拟步数
-    initial_scale -- 初始意见的缩放因子
-    morality_rate -- moralizing的non-zealot people的比例
-    zealot_morality -- zealot是否全部moralizing
-    identity_clustered -- 是否按identity进行clustered的初始化
-    zealot_count -- zealot的总数量
-    zealot_mode -- zealot的初始化配置 ("none", "clustered", "random", "high-degree")，若为None则运行所有模式
-    base_seed -- 基础随机种子，每次运行会使用不同的种子
-    output_dir -- 结果输出目录
-    zealot_identity_allocation -- 是否按identity分配zealot，默认启用，启用时zealot只分配给identity为1的agent
+    Parameters:
+    runs -- Number of runs
+    steps -- Number of simulation steps per run
+    initial_scale -- Scaling factor for initial opinions
+    morality_rate -- Proportion of moralizing non-zealot people
+    zealot_morality -- Whether all zealots are moralizing
+    identity_clustered -- Whether to use clustered initialization by identity
+    zealot_count -- Total number of zealots
+    zealot_mode -- Zealot initialization configuration ("none", "clustered", "random", "high-degree"), if None run all modes
+    base_seed -- Base random seed, each run will use a different seed
+    output_dir -- Result output directory
+    zealot_identity_allocation -- Whether to allocate zealots by identity, enabled by default, when enabled zealots are only assigned to agents with identity=1
     """
     print(f"Running multi-zealot experiment with {runs} runs...")
     print(f"Parameters: morality_rate={morality_rate}, zealot_morality={zealot_morality}, identity_clustered={identity_clustered}")
     print(f"zealot_count={zealot_count}, zealot_mode={zealot_mode}")
     
-    # 创建结果目录
+    # Create result directory
     if output_dir is None:
-        # 创建包含参数信息的目录名
+        # Create directory name containing parameter information
         dir_name = f"mor_{morality_rate:.1f}_zm_{'T' if zealot_morality else 'F'}_id_{'C' if identity_clustered else 'R'}"
         if zealot_mode:
             dir_name += f"_zn_{zealot_count}_zm_{zealot_mode}"
@@ -55,7 +55,7 @@ def run_multi_zealot_experiment(
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
     
-    # 为每次运行创建单独的子目录
+    # Create separate subdirectories for each run
     run_dirs = []
     for i in range(runs):
         run_dir = os.path.join(results_dir, f"run_{i+1}")
@@ -63,25 +63,25 @@ def run_multi_zealot_experiment(
             os.makedirs(run_dir)
         run_dirs.append(run_dir)
     
-    # 创建平均结果目录
+    # Create average results directory
     avg_dir = os.path.join(results_dir, "average_results")
     if not os.path.exists(avg_dir):
         os.makedirs(avg_dir)
         
-    # 创建统计子目录
+    # Create statistics subdirectory
     stats_dir = os.path.join(avg_dir, "statistics")
     if not os.path.exists(stats_dir):
         os.makedirs(stats_dir)
     
-    # 运行多次实验
+    # Run multiple experiments
     run_results = []
     
-    # 确定要运行的模式
+    # Determine modes to run
     if zealot_mode is None:
-        # 如果未指定模式，运行所有模式
+        # If no mode specified, run all modes
         mode_names = ["without Zealots", "with Clustered Zealots", "with Random Zealots", "with High-Degree Zealots"]
     else:
-        # 如果指定了模式，只运行该模式
+        # If mode specified, run only that mode
         if zealot_mode == "none":
             mode_names = ["without Zealots"]
         elif zealot_mode == "clustered":
@@ -93,17 +93,17 @@ def run_multi_zealot_experiment(
         else:
             raise ValueError(f"Unknown zealot mode: {zealot_mode}")
     
-    # 收集每次运行的统计数据
+    # Collect statistics from each run
     all_stats = {mode: [] for mode in mode_names}
     
-    # 收集每次运行的意见历史，用于生成平均热图
+    # Collect opinion history from each run for generating average heatmaps
     all_opinion_histories = {mode: [] for mode in mode_names}
     
     for i in tqdm(range(runs), desc="Running experiments"):
-        # 为每次运行使用不同的随机种子
+        # Use different random seed for each run
         current_seed = base_seed + i
         
-        # 在单独的目录中运行实验，使用新的zealot功能
+        # Run experiment in separate directory, using new zealot functionality
         print(f"\nRun {i+1}/{runs} with seed {current_seed}")
         result = run_zealot_experiment(
             steps=steps,
@@ -118,25 +118,25 @@ def run_multi_zealot_experiment(
             zealot_identity_allocation=zealot_identity_allocation
         )
         
-        # 收集结果
+        # Collect results
         run_results.append(result)
         
-        # 收集统计数据和意见历史
+        # Collect statistics and opinion history
         for mode in mode_names:
             if mode in result:
                 all_stats[mode].append(result[mode]["stats"])
                 all_opinion_histories[mode].append(result[mode]["opinion_history"])
     
-    # 计算平均统计数据
+    # Calculate average statistics
     avg_stats = {}
     for mode in mode_names:
-        if all_stats[mode]:  # 确保有数据
+        if all_stats[mode]:  # Ensure there is data
             avg_stats[mode] = average_stats(all_stats[mode])
     
-    # 绘制平均统计图表
+    # Plot average statistics charts
     plot_average_statistics(avg_stats, mode_names, avg_dir, steps)
     
-    # 生成平均热图
+    # Generate average heatmaps
     generate_average_heatmaps(all_opinion_histories, mode_names, avg_dir)
     
     print(f"\nMulti-zealot experiment completed. Average results saved to {avg_dir}")
@@ -145,44 +145,44 @@ def run_multi_zealot_experiment(
 
 def average_stats(stats_list):
     """
-    计算多次运行的平均统计数据
+    Calculate average statistics from multiple runs
     
-    参数:
-    stats_list -- 包含多次运行统计数据的列表
+    Parameters:
+    stats_list -- List containing statistics from multiple runs
     
-    返回:
-    dict -- 平均统计数据
+    Returns:
+    dict -- Average statistics
     """
-    # 初始化结果字典
+    # Initialize result dictionary
     avg_stats = {}
     
-    # 检查是否有数据
+    # Check if there is data
     if not stats_list:
         return avg_stats
     
-    # 获取第一个统计数据的键，用于初始化平均值字典
+    # Get keys from first statistics data to initialize average dictionary
     stat_keys = [
         "mean_opinions", "mean_abs_opinions", "non_zealot_variance", 
         "cluster_variance", "negative_counts", "negative_means", 
         "positive_counts", "positive_means", "polarization_index",
-        # 新增identity相关统计
+        # Add identity-related statistics
         "identity_1_mean_opinions", "identity_neg1_mean_opinions", "identity_opinion_differences"
     ]
     
-    # 初始化每个统计数据的数组
+    # Initialize arrays for each statistic
     for key in stat_keys:
         if key in stats_list[0]:
             avg_stats[key] = np.zeros_like(stats_list[0][key])
     
-    # 计算所有运行的总和
+    # Calculate sum of all runs
     for stats in stats_list:
         for key in stat_keys:
             if key in stats and key in avg_stats:
-                # 确保数组长度一致
+                # Ensure array lengths are consistent
                 min_length = min(len(stats[key]), len(avg_stats[key]))
                 avg_stats[key][:min_length] += np.array(stats[key][:min_length])
     
-    # 计算平均值
+    # Calculate average values
     n = len(stats_list)
     for key in stat_keys:
         if key in avg_stats:
@@ -203,11 +203,11 @@ def generate_average_heatmaps(all_opinion_histories, mode_names, output_dir, hea
     """
     print("Generating average heatmaps...")
     
-    # 确保输出目录存在
+    # Ensure output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # 设置默认的热力图配置
+    # Set default heatmap configuration
     default_config = {
         'bins': 300,
         'log_scale': True,
@@ -217,25 +217,25 @@ def generate_average_heatmaps(all_opinion_histories, mode_names, output_dir, hea
         'custom_norm': None
     }
     
-    # 合并用户提供的配置
+    # Merge user-provided configuration
     if heatmap_config:
         default_config.update(heatmap_config)
     
     for mode in mode_names:
-        # 获取该模式的所有意见历史
+        # Get all opinion histories for this mode
         mode_histories = all_opinion_histories[mode]
         
         if not mode_histories:
             continue
         
-        # 计算平均意见分布（而不是平均意见轨迹）
+        # Calculate average opinion distribution（而不是平均意见轨迹）
         avg_distribution = calculate_average_opinion_distribution(mode_histories, bins=default_config['bins'])
 
         # start_step = 900
         start_step = 0
         avg_distribution = avg_distribution[start_step:]
         
-        # 绘制平均热图
+        # Plot average heatmap
         heatmap_file = os.path.join(output_dir, f"avg_{mode.lower().replace(' ', '_')}_heatmap.png")
         draw_opinion_distribution_heatmap_from_distribution(
             avg_distribution,
@@ -265,7 +265,7 @@ def calculate_average_opinion_distribution(opinion_histories, bins=40):
     if not opinion_histories:
         return np.array([])
     
-    # 获取第一个历史的时间步长
+    # Get time steps from first history
     num_steps = len(opinion_histories[0])
     
     # 创建opinion的bins
@@ -312,7 +312,7 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     # 创建opinion的bins
     opinion_bins = np.linspace(-1, 1, bins + 1)
     
-    # 创建绘图
+    # Create plot
     # 放大默认字体并禁用 Unicode 负号，避免 10^-1 中负号渲染问题
     plt.rcParams.update({
         'font.size': 18,
@@ -388,7 +388,7 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
             step = (vmax - vmin) / 5
             cbar.set_ticks([vmin + i*step for i in range(6)])
     
-    # 设置标签和标题
+    # Set labels and title
     ax.set_xlabel('Opinion Value', fontsize=24)
     ax.set_ylabel('Time Step', fontsize=24)
     ax.set_title(title, fontsize=26)
@@ -402,7 +402,7 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     ax.set_yticks(tick_positions)
     ax.set_yticklabels(tick_labels)
     
-    # 保存图表
+    # Save chart
     plt.tight_layout()
     plt.savefig(filename, dpi=300)
     plt.close()
@@ -422,7 +422,7 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     # 绘制3D表面
     surf = ax.plot_surface(X, Y, selected_data, cmap=cmap, edgecolor='none', alpha=0.8)
     
-    # 设置标签和标题
+    # Set labels and title
     ax.set_xlabel('Opinion Value', fontsize=18)
     ax.set_ylabel('Time Step', fontsize=18)
     ax.set_zlabel('Average Agent Count', fontsize=18)
@@ -449,7 +449,7 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
 
 def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     """
-    绘制平均统计图表
+    Plot average statistics charts
     
     参数:
     avg_stats -- 平均统计数据字典
@@ -683,7 +683,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
 
 
 if __name__ == "__main__":
-    # 运行多次zealot实验
+    # Run multiple zealot experiments
     run_multi_zealot_experiment(
         runs=10,                  # 运行10次实验
         steps=100,                # 每次运行100步
