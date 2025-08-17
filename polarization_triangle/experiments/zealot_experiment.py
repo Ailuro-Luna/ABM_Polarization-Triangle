@@ -18,7 +18,6 @@ from polarization_triangle.visualization.activation_viz import (
     draw_activation_heatmap,
     draw_activation_trajectory
 )
-from polarization_triangle.analysis.trajectory import run_simulation_with_trajectory
 
 
 def generate_rule_usage_plots(sim, title_prefix, output_dir):

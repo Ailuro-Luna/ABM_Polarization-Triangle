@@ -17,47 +17,6 @@ import json
 from datetime import datetime
 
 
-def save_trajectory_to_csv(history: List[np.ndarray], output_path: str) -> str:
-    """
-    将轨迹数据保存为CSV文件
-    
-    参数:
-    history -- 意见历史数据列表
-    output_path -- 输出CSV文件路径
-    
-    返回:
-    保存的文件路径
-    """
-    # 转换为numpy数组
-    history_array = np.array(history)
-    steps, num_agents = history_array.shape
-    
-    # 创建数据框
-    data = {
-        'step': [],
-        'agent_id': [],
-        'opinion': []
-    }
-    
-    # 填充数据
-    for step in range(steps):
-        for agent_id in range(num_agents):
-            data['step'].append(step)
-            data['agent_id'].append(agent_id)
-            data['opinion'].append(history_array[step, agent_id])
-    
-    # 创建DataFrame并保存
-    df = pd.DataFrame(data)
-    
-    # 确保输出目录存在
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    
-    # 保存到CSV
-    df.to_csv(output_path, index=False)
-    
-    return output_path
-
-
 def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') -> Dict[str, str]:
     """
     保存模拟数据到文件，便于后续进行统计分析
@@ -403,30 +362,6 @@ class ExperimentDataManager:
         
         with open(self.experiment_config_file, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2, ensure_ascii=False)
-    
-    def load_experiment_config(self) -> Dict[str, Any]:
-        """
-        加载实验配置
-        
-        Returns:
-            实验配置字典
-        """
-        if not self.experiment_config_file.exists():
-            return {}
-        
-        with open(self.experiment_config_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
-    def clean_old_data(self, keep_batches: int = 10) -> None:
-        """
-        清理旧数据，保留最近的批次
-        
-        Args:
-            keep_batches: 保留的批次数量
-        """
-        # TODO: 实现数据清理逻辑
-        # 这个功能可以在将来需要时实现
-        pass
     
     def export_summary_report(self) -> str:
         """

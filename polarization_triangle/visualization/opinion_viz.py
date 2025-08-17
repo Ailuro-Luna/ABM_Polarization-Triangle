@@ -3,19 +3,6 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 from matplotlib.colors import LogNorm
-def draw_opinion_distribution(sim, title, filename, bins=20):
-    """
-    绘制结束时 agent 的 opinion 分布图。
-    横轴为 opinion 区间（默认在 -1 到 1 之间），纵轴为落在该区间内的 agent 数量。
-    """
-    import matplotlib.pyplot as plt
-    plt.figure(figsize=(8, 6))
-    plt.hist(sim.opinions, bins=bins, range=(-1, 1), color='blue', alpha=0.7, edgecolor='black')
-    plt.title(title)
-    plt.xlabel("Opinion")
-    plt.ylabel("Number of Agents")
-    plt.savefig(filename)
-    plt.close()
 
 
 def draw_opinion_distribution_heatmap(history, title, filename, bins=50, log_scale=True, 
@@ -169,18 +156,4 @@ def draw_opinion_distribution_heatmap(history, title, filename, bins=50, log_sca
     waterfall_filename = filename.replace('.png', '_3d.png')
     plt.tight_layout()
     plt.savefig(waterfall_filename, dpi=300)
-    plt.close()
-
-def draw_opinion_trajectory(history, title, filename):
-    history = np.array(history)
-    total_steps = history.shape[0]
-    fig, ax = plt.subplots(figsize=(10, 6))
-    y = range(total_steps)
-    for i in range(history.shape[1]):
-        ax.plot(history[:, i], y, color='gray', alpha=0.5)
-    ax.set_title(title)
-    ax.set_xlabel("Opinion")
-    ax.set_ylabel("Time step")
-    # ax.set_ylim(-1, 1)
-    plt.savefig(filename)
     plt.close()

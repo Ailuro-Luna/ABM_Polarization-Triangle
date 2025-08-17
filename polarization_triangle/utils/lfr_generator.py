@@ -99,35 +99,6 @@ def generate_lfr_network(
         return None
 
 
-def save_lfr_network(G: nx.Graph, filepath: str) -> bool:
-    """
-    保存LFR网络到文件
-    
-    参数:
-        G: networkx图对象
-        filepath: 保存路径（.pkl文件）
-        
-    返回:
-        成功返回True，失败返回False
-    """
-    try:
-        # 确保目录存在（如果有父目录）
-        dirname = os.path.dirname(filepath)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        
-        # 保存网络
-        with open(filepath, 'wb') as f:
-            pickle.dump(G, f)
-            
-        file_size = os.path.getsize(filepath)
-        logger.info(f"网络已保存到 {filepath}, 文件大小: {file_size/1024:.1f} KB")
-        return True
-        
-    except Exception as e:
-        logger.error(f"保存网络时发生错误: {e}")
-        return False
-
 
 def _ensure_connectivity(G: nx.Graph) -> None:
     """
@@ -172,22 +143,3 @@ def _ensure_connectivity(G: nx.Graph) -> None:
     else:
         logger.warning("连通性修复可能失败，网络仍然不连通")
 
-
-if __name__ == "__main__":
-    # 简单测试
-    print("测试LFR网络生成...")
-    
-    G = generate_lfr_network(n=100, mu=0.1, seed=42)
-    if G:
-        print(f"生成成功: {G.number_of_nodes()}个节点, {G.number_of_edges()}条边")
-        
-        # 测试保存
-        test_path = "./test_lfr_network.pkl"
-        if save_lfr_network(G, test_path):
-            print(f"保存成功: {test_path}")
-            # 清理测试文件
-            if os.path.exists(test_path):
-                os.remove(test_path)
-                print("清理测试文件完成")
-    else:
-        print("生成失败")

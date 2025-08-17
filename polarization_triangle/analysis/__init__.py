@@ -5,7 +5,6 @@ Analysis模块 - 提供各种分析功能
 
 # 现有分析模块
 from .statistics import *
-from .trajectory import *
 
 # 敏感性分析模块
 try:
@@ -18,9 +17,6 @@ try:
         'calculate_mean_opinion',
         'calculate_variance_metrics', 
         'calculate_identity_statistics',
-        'get_comprehensive_statistics',
-        'export_statistics_to_dict',
-        'print_statistics_summary',
         
         # 轨迹分析
         'calculate_trajectory_metrics',
@@ -42,9 +38,6 @@ except ImportError as e:
         'calculate_mean_opinion',
         'calculate_variance_metrics',
         'calculate_identity_statistics', 
-        'get_comprehensive_statistics',
-        'export_statistics_to_dict',
-        'print_statistics_summary',
         
         # 轨迹分析
         'calculate_trajectory_metrics'

@@ -211,42 +211,6 @@ class Simulation:
         """
         return self.zealot_ids.copy()
 
-    def add_zealots(self, agent_ids: List[int], opinion: float = None):
-        """
-        手动添加zealots
-        
-        参数:
-        agent_ids -- 要设置为zealot的agent ID列表
-        opinion -- zealot的固定意见值，如果为None则使用配置中的值
-        """
-        if opinion is None:
-            opinion = self.zealot_opinion
-        
-        for agent_id in agent_ids:
-            if 0 <= agent_id < self.num_agents and agent_id not in self.zealot_ids:
-                self.zealot_ids.append(agent_id)
-                self.opinions[agent_id] = opinion
-                if self.config.zealot_morality:
-                    self.morals[agent_id] = 1
-        
-        self.enable_zealots = len(self.zealot_ids) > 0
-
-    def remove_zealots(self, agent_ids: List[int] = None):
-        """
-        移除zealots
-        
-        参数:
-        agent_ids -- 要移除的zealot ID列表，如果为None则移除所有zealots
-        """
-        if agent_ids is None:
-            self.zealot_ids.clear()
-        else:
-            for agent_id in agent_ids:
-                if agent_id in self.zealot_ids:
-                    self.zealot_ids.remove(agent_id)
-        
-        self.enable_zealots = len(self.zealot_ids) > 0
-
     def _create_csr_neighbors(self):
         """
         创建CSR格式的邻居表示
@@ -522,28 +486,6 @@ class Simulation:
         极化指数历史列表
         """
         return self.polarization_history
-        
-    def get_agent_activation_details(self, agent_id):
-        """
-        获取特定代理的自我激活和社会影响详情
-        
-        参数:
-        agent_id -- 代理的ID
-        
-        返回:
-        字典，包含该代理的自我激活和社会影响值
-        """
-        if 0 <= agent_id < self.num_agents:
-            return {
-                "self_activation": self.self_activation[agent_id],
-                "social_influence": self.social_influence[agent_id],
-                "total_activation": self.self_activation[agent_id] + self.social_influence[agent_id],
-                "opinion": self.opinions[agent_id],
-                "morality": self.morals[agent_id],
-                "identity": self.identities[agent_id]
-            }
-        else:
-            return None
 
     def save_simulation_data(self, output_dir: str, prefix: str = 'sim_data') -> Dict[str, str]:
         """

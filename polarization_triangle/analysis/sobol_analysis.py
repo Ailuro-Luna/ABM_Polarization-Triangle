@@ -83,7 +83,8 @@ class SobolConfig:
                 enable_zealots=True,
                 zealot_mode="random",
                 zealot_morality=True,
-                zealot_identity_allocation=False
+                zealot_identity_allocation=False,
+                use_network_pool=False
             )
         else:
             # 如果提供了base_config，更新条件参数
