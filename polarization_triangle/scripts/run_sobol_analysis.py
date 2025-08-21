@@ -176,127 +176,127 @@ def save_parameter_record(analyzer: SobolAnalyzer, config_name: str,
     with open(record_file_json, 'w', encoding='utf-8') as f:
         json.dump(record_data, f, ensure_ascii=False, indent=2)
     
-    # 保存文本格式（更易读）
+    # Save text format (more readable)
     with open(record_file_txt, 'w', encoding='utf-8') as f:
         f.write("="*80 + "\n")
-        f.write("Sobol敏感性分析参数配置记录\n")
+        f.write("Sobol Sensitivity Analysis Parameter Configuration Record\n")
         f.write("="*80 + "\n\n")
         
-        # 分析信息
-        f.write("【分析信息】\n")
-        f.write(f"配置名称: {config_name}\n")
-        f.write(f"分析时间: {current_time}\n")
-        f.write(f"开始时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}\n")
+        # Analysis Info
+        f.write("[Analysis Info]\n")
+        f.write(f"Config Name: {config_name}\n")
+        f.write(f"Analysis Time: {current_time}\n")
+        f.write(f"Start Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}\n")
         if end_time:
-            f.write(f"结束时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}\n")
-            f.write(f"总耗时: {end_time - start_time:.2f} 秒\n")
-        f.write(f"输出目录: {analyzer.config.output_dir}\n\n")
+            f.write(f"End Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}\n")
+            f.write(f"Total Duration: {end_time - start_time:.2f} seconds\n")
+        f.write(f"Output Directory: {analyzer.config.output_dir}\n\n")
         
-        # Sobol分析配置
-        f.write("【Sobol敏感性分析配置】\n")
-        f.write(f"基础样本数: {analyzer.config.n_samples}\n")
-        f.write(f"总样本数: {total_samples} (N × (2D + 2))\n")
-        f.write(f"每个样本运行次数: {analyzer.config.n_runs}\n")
-        f.write(f"每次模拟步数: {analyzer.config.num_steps}\n")
-        f.write(f"并行进程数: {analyzer.config.n_processes}\n")
-        f.write(f"置信水平: {analyzer.config.confidence_level}\n")
-        f.write(f"Bootstrap样本数: {analyzer.config.bootstrap_samples}\n")
-        f.write(f"保存中间结果: {analyzer.config.save_intermediate}\n\n")
+        # Sobol Analysis Config
+        f.write("[Sobol Sensitivity Analysis Config]\n")
+        f.write(f"Base Samples: {analyzer.config.n_samples}\n")
+        f.write(f"Total Samples: {total_samples} (N * (2D + 2))\n")
+        f.write(f"Runs per Sample: {analyzer.config.n_runs}\n")
+        f.write(f"Steps per Simulation: {analyzer.config.num_steps}\n")
+        f.write(f"Parallel Processes: {analyzer.config.n_processes}\n")
+        f.write(f"Confidence Level: {analyzer.config.confidence_level}\n")
+        f.write(f"Bootstrap Samples: {analyzer.config.bootstrap_samples}\n")
+        f.write(f"Save Intermediate Results: {analyzer.config.save_intermediate}\n\n")
         
-        # 敏感性分析参数
-        f.write("【敏感性分析参数及范围】\n")
+        # Sensitivity Analysis Parameters
+        f.write("[Sensitivity Analysis Parameters and Bounds]\n")
         for param, bounds in analyzer.config.parameter_bounds.items():
             f.write(f"{param}: [{bounds[0]}, {bounds[1]}]\n")
         f.write("\n")
         
-        # 网络配置
-        f.write("【网络配置】\n")
-        f.write(f"节点数量: {analyzer.config.base_config.num_agents}\n")
-        f.write(f"网络类型: {analyzer.config.base_config.network_type}\n")
-        f.write("网络参数:\n")
+        # Network Config
+        f.write("[Network Config]\n")
+        f.write(f"Number of Agents: {analyzer.config.base_config.num_agents}\n")
+        f.write(f"Network Type: {analyzer.config.base_config.network_type}\n")
+        f.write("Network Parameters:\n")
         for key, value in analyzer.config.base_config.network_params.items():
             f.write(f"  {key}: {value}\n")
         f.write("\n")
         
-        # 模拟配置
-        f.write("【模拟配置】\n")
-        f.write(f"意见分布: {analyzer.config.base_config.opinion_distribution}\n")
-        f.write(f"道德化率: {analyzer.config.base_config.morality_rate}\n")
-        f.write(f"身份聚类: {analyzer.config.base_config.cluster_identity}\n")
-        f.write(f"道德聚类: {analyzer.config.base_config.cluster_morality}\n")
-        f.write(f"意见聚类: {analyzer.config.base_config.cluster_opinion}\n")
-        f.write(f"影响因子: {analyzer.config.base_config.influence_factor}\n")
-        f.write(f"容忍度: {analyzer.config.base_config.tolerance}\n")
-        f.write(f"意见衰减率(δ): {analyzer.config.base_config.delta}\n")
-        f.write(f"意见激活系数(u): {analyzer.config.base_config.u}\n")
-        f.write(f"默认自我激活系数(α): {analyzer.config.base_config.alpha}\n")
-        f.write(f"默认社会影响系数(β): {analyzer.config.base_config.beta}\n")
-        f.write(f"默认道德化影响系数(γ): {analyzer.config.base_config.gamma}\n\n")
+        # Simulation Config
+        f.write("[Simulation Config]\n")
+        f.write(f"Opinion Distribution: {analyzer.config.base_config.opinion_distribution}\n")
+        f.write(f"Morality Rate: {analyzer.config.base_config.morality_rate}\n")
+        f.write(f"Identity Clustering: {analyzer.config.base_config.cluster_identity}\n")
+        f.write(f"Morality Clustering: {analyzer.config.base_config.cluster_morality}\n")
+        f.write(f"Opinion Clustering: {analyzer.config.base_config.cluster_opinion}\n")
+        f.write(f"Influence Factor: {analyzer.config.base_config.influence_factor}\n")
+        f.write(f"Tolerance: {analyzer.config.base_config.tolerance}\n")
+        f.write(f"Opinion Decay Rate (δ): {analyzer.config.base_config.delta}\n")
+        f.write(f"Opinion Activation Coefficient (u): {analyzer.config.base_config.u}\n")
+        f.write(f"Default Self-Activation Coefficient (α): {analyzer.config.base_config.alpha}\n")
+        f.write(f"Default Social Influence Coefficient (β): {analyzer.config.base_config.beta}\n")
+        f.write(f"Default Moralizing Influence Coefficient (γ): {analyzer.config.base_config.gamma}\n\n")
         
-        # Zealot配置
-        f.write("【Zealot配置】\n")
-        f.write(f"Zealot数量: {analyzer.config.base_config.zealot_count}\n")
-        f.write(f"启用Zealot: {analyzer.config.base_config.enable_zealots}\n")
-        f.write(f"Zealot模式: {analyzer.config.base_config.zealot_mode}\n")
-        f.write(f"Zealot意见: {analyzer.config.base_config.zealot_opinion}\n")
-        f.write(f"Zealot道德化: {analyzer.config.base_config.zealot_morality}\n")
-        f.write(f"按身份分配Zealot: {analyzer.config.base_config.zealot_identity_allocation}\n\n")
+        # Zealot Config
+        f.write("[Zealot Config]\n")
+        f.write(f"Zealot Count: {analyzer.config.base_config.zealot_count}\n")
+        f.write(f"Enable Zealots: {analyzer.config.base_config.enable_zealots}\n")
+        f.write(f"Zealot Mode: {analyzer.config.base_config.zealot_mode}\n")
+        f.write(f"Zealot Opinion: {analyzer.config.base_config.zealot_opinion}\n")
+        f.write(f"Zealot Morality: {analyzer.config.base_config.zealot_morality}\n")
+        f.write(f"Allocate Zealots by Identity: {analyzer.config.base_config.zealot_identity_allocation}\n\n")
         
-        # 计算复杂度
-        f.write("【计算复杂度】\n")
-        f.write(f"分析参数数量: {len(analyzer.param_names)} ({', '.join(analyzer.param_names)})\n")
-        f.write(f"基础样本数: {analyzer.config.n_samples}\n")
-        f.write(f"总样本数: {total_samples}\n")
-        f.write(f"每个样本运行次数: {analyzer.config.n_runs}\n")
-        f.write(f"总模拟运行次数: {total_simulations:,}\n")
-        f.write(f"每次模拟步数: {analyzer.config.num_steps}\n")
-        f.write(f"总计算步数: {total_steps:,}\n")
-        f.write(f"并行进程数: {analyzer.config.n_processes}\n\n")
+        # Computational Complexity
+        f.write("[Computational Complexity]\n")
+        f.write(f"Number of Analyzed Parameters: {len(analyzer.param_names)} ({', '.join(analyzer.param_names)})\n")
+        f.write(f"Base Samples: {analyzer.config.n_samples}\n")
+        f.write(f"Total Samples: {total_samples}\n")
+        f.write(f"Runs per Sample: {analyzer.config.n_runs}\n")
+        f.write(f"Total Simulation Runs: {total_simulations:,}\n")
+        f.write(f"Steps per Simulation: {analyzer.config.num_steps}\n")
+        f.write(f"Total Computation Steps: {total_steps:,}\n")
+        f.write(f"Parallel Processes: {analyzer.config.n_processes}\n\n")
         
-        # 输出指标
-        f.write("【输出指标】\n")
-        f.write("极化相关指标:\n")
+        # Output Metrics
+        f.write("[Output Metrics]\n")
+        f.write("Polarization-related Metrics:\n")
         for metric in ["polarization_index", "opinion_variance", "extreme_ratio", "identity_polarization"]:
             f.write(f"  - {metric}\n")
-        f.write("收敛相关指标:\n")
+        f.write("Convergence-related Metrics:\n")
         for metric in ["mean_abs_opinion", "final_stability"]:
             f.write(f"  - {metric}\n")
-        f.write("动态过程指标:\n")
+        f.write("Dynamic Process Metrics:\n")
         for metric in ["trajectory_length", "oscillation_frequency", "group_divergence"]:
             f.write(f"  - {metric}\n")
-        f.write("身份相关指标:\n")
+        f.write("Identity-related Metrics:\n")
         for metric in ["identity_variance_ratio", "cross_identity_correlation", 
                       "variance_per_identity_1", "variance_per_identity_neg1", "variance_per_identity_mean"]:
             f.write(f"  - {metric}\n")
         f.write("\n")
         
-        # 指标描述
-        f.write("【指标描述】\n")
+        # Metric Descriptions
+        f.write("[Metric Descriptions]\n")
         metric_descriptions = {
-            'polarization_index': 'Koudenburg极化指数，衡量系统整体极化程度',
-            'opinion_variance': '意见方差，反映观点分散程度',
-            'extreme_ratio': '极端观点比例，|opinion| > 0.8的Agent比例',
-            'identity_polarization': '身份间极化差异，不同身份群体平均意见的方差',
-            'mean_abs_opinion': '平均绝对意见，系统观点强度',
-            'final_stability': '最终稳定性，最后阶段的变异系数',
-            'trajectory_length': '意见轨迹长度，观点变化的累积距离',
-            'oscillation_frequency': '振荡频率，观点方向改变的频次',
-            'group_divergence': '群体分化度，不同身份群体间的意见差异',
-            'identity_variance_ratio': '身份方差比，组间方差与组内方差的比值',
-            'cross_identity_correlation': '跨身份相关性，不同身份群体意见的相关系数',
-            'variance_per_identity_1': '身份群体1方差，identity=1群体内部的意见方差',
-            'variance_per_identity_neg1': '身份群体-1方差，identity=-1群体内部的意见方差',
-            'variance_per_identity_mean': '身份群体平均方差，两个身份群体方差的均值'
+            'polarization_index': 'Koudenburg polarization index, measures overall system polarization',
+            'opinion_variance': 'Opinion variance, reflects the dispersion of opinions',
+            'extreme_ratio': 'Proportion of extreme opinions, ratio of agents with |opinion| > 0.8',
+            'identity_polarization': 'Inter-identity polarization difference, variance of mean opinions between different identity groups',
+            'mean_abs_opinion': 'Mean absolute opinion, strength of system opinions',
+            'final_stability': 'Final stability, coefficient of variation in the final stage',
+            'trajectory_length': 'Opinion trajectory length, cumulative distance of opinion changes',
+            'oscillation_frequency': 'Oscillation frequency, frequency of opinion direction changes',
+            'group_divergence': 'Group divergence, opinion difference between different identity groups',
+            'identity_variance_ratio': 'Identity variance ratio, ratio of between-group variance to within-group variance',
+            'cross_identity_correlation': 'Cross-identity correlation, correlation coefficient of opinions between different identity groups',
+            'variance_per_identity_1': 'Variance of identity group 1, opinion variance within the identity=1 group',
+            'variance_per_identity_neg1': 'Variance of identity group -1, opinion variance within the identity=-1 group',
+            'variance_per_identity_mean': 'Mean variance of identity groups, average of the variances of the two identity groups'
         }
         
         for metric, description in metric_descriptions.items():
             f.write(f"{metric}: {description}\n")
         
         f.write("\n" + "="*80 + "\n")
-        f.write("记录生成完成\n")
+        f.write("Record generation complete\n")
         f.write("="*80 + "\n")
     
-    print(f"参数记录已保存到:")
+    print(f"Parameter record saved to:")
     print(f"  - {record_file_txt}")
     print(f"  - {record_file_json}")
 
@@ -306,45 +306,45 @@ def run_sensitivity_analysis(config_name: str = 'standard',
                            load_existing: bool = False,
                            structural_alignment: str = 'low',
                            morality_ratio: float = 0.0):
-    """运行敏感性分析"""
+    """Run sensitivity analysis"""
     
-    # 选择配置
+    # Select configuration
     if custom_config:
         config = custom_config
     else:
         configs = create_analysis_configs(structural_alignment, morality_ratio)
         if config_name not in configs:
-            raise ValueError(f"配置 '{config_name}' 不存在。可用配置: {list(configs.keys())}")
+            raise ValueError(f"Configuration '{config_name}' does not exist. Available configurations: {list(configs.keys())}")
         config = configs[config_name]
     
-    print(f"使用配置: {config_name}")
+    print(f"Using configuration: {config_name}")
     print(f"Structural Alignment: {config.structural_alignment} ({'cluster_identity=True' if config.structural_alignment == 'high' else 'cluster_identity=False'})")
     print(f"Morality Ratio: {config.morality_ratio} (morality_rate={config.morality_ratio})")
-    print(f"样本数: {config.n_samples}")
-    print(f"运行次数: {config.n_runs}")
-    print(f"进程数: {config.n_processes}")
-    print(f"模拟步数: {config.num_steps}")
-    print(f"输出目录: {config.output_dir}")
+    print(f"Number of samples: {config.n_samples}")
+    print(f"Number of runs: {config.n_runs}")
+    print(f"Number of processes: {config.n_processes}")
+    print(f"Number of simulation steps: {config.num_steps}")
+    print(f"Output directory: {config.output_dir}")
     
-    # 创建分析器
+    # Create analyzer
     analyzer = SobolAnalyzer(config)
     
-    # 加载已有结果或运行新分析
+    # Load existing results or run a new analysis
     if load_existing:
-        print("尝试加载已有结果...")
+        print("Attempting to load existing results...")
         try:
             sensitivity_indices = analyzer.load_results()
             if sensitivity_indices:
-                print("成功加载已有结果")
+                print("Successfully loaded existing results")
             else:
-                print("未找到已有结果，开始新分析...")
+                print("No existing results found, starting new analysis...")
                 sensitivity_indices = analyzer.run_complete_analysis()
         except Exception as e:
-            print(f"加载失败: {e}")
-            print("开始新分析...")
+            print(f"Failed to load: {e}")
+            print("Starting new analysis...")
             sensitivity_indices = analyzer.run_complete_analysis()
     else:
-        # 运行完整分析
+        # Run complete analysis
         sensitivity_indices = analyzer.run_complete_analysis()
     
     return analyzer, sensitivity_indices
@@ -355,35 +355,35 @@ def generate_reports(analyzer: SobolAnalyzer,
                     create_plots: bool = True,
                     config_name: str = "unknown",
                     start_time: float = None):
-    """生成分析报告"""
+    """Generate analysis reports"""
     
     print("\n" + "="*60)
-    print("生成分析报告")
+    print("Generating Analysis Reports")
     print("="*60)
     
-    # 保存参数配置记录
+    # Save parameter configuration record
     if start_time:
         save_parameter_record(analyzer, config_name, start_time, time.time())
     
-    # 生成摘要表
+    # Generate summary table
     try:
         summary_df = analyzer.get_summary_table()
-        print("\n敏感性分析摘要 (前10行):")
+        print("\nSensitivity Analysis Summary (first 10 rows):")
         print(summary_df.head(10).to_string(index=False))
         
-        # 导出Excel报告
+        # Export Excel report
         analyzer.export_results()
         
     except Exception as e:
-        print(f"生成数据报告时出错: {e}")
+        print(f"Error generating data report: {e}")
     
-    # 生成可视化报告
+    # Generate visualization report
     if create_plots:
         try:
-            print("\n生成可视化报告...")
+            print("\nGenerating visualization report...")
             visualizer = SensitivityVisualizer()
             
-            # 创建图表输出目录
+            # Create plot output directory
             plot_dir = os.path.join(analyzer.config.output_dir, "plots")
             plot_files = visualizer.create_comprehensive_report(
                 sensitivity_indices,
@@ -392,25 +392,25 @@ def generate_reports(analyzer: SobolAnalyzer,
                 plot_dir
             )
             
-            print(f"可视化报告已保存到: {plot_dir}")
+            print(f"Visualization report saved to: {plot_dir}")
             
         except Exception as e:
-            print(f"生成可视化报告时出错: {e}")
+            print(f"Error generating visualization report: {e}")
     
-    # 打印关键发现
+    # Print key findings
     print_key_findings(sensitivity_indices)
 
 
 def print_key_findings(sensitivity_indices: dict):
-    """打印关键发现"""
+    """Print key findings"""
     print("\n" + "="*60)
-    print("关键发现")
+    print("Key Findings")
     print("="*60)
     
     param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
-    param_labels = ['α (自我激活)', 'β (社会影响)', 'γ (道德化影响)', 'cohesion_factor (凝聚力)']
+    param_labels = ['α (Self-activation)', 'β (Social influence)', 'γ (Moralizing influence)', 'cohesion_factor']
     
-    # 计算平均敏感性
+    # Calculate average sensitivity
     all_st_values = []
     all_s1_values = []
     
@@ -424,30 +424,30 @@ def print_key_findings(sensitivity_indices: dict):
         mean_s1 = np.mean(all_s1_values, axis=0)
         mean_interaction = mean_st - mean_s1
         
-        # 参数重要性排序
+        # Parameter importance ranking
         importance_ranking = sorted(
             zip(param_labels, mean_st), 
             key=lambda x: x[1], 
             reverse=True
         )
         
-        print("\n1. 参数重要性排序 (基于平均总敏感性指数):")
+        print("\n1. Parameter Importance Ranking (based on average total sensitivity index):")
         for i, (param, value) in enumerate(importance_ranking, 1):
             print(f"   {i}. {param}: {value:.3f}")
         
-        # 交互效应分析
-        print("\n2. 平均交互效应强度 (ST - S1):")
+        # Interaction effect analysis
+        print("\n2. Average Interaction Effect Strength (ST - S1):")
         for param, interaction in zip(param_labels, mean_interaction):
             if interaction > 0.1:
-                level = "强"
+                level = "Strong"
             elif interaction > 0.05:
-                level = "中等"
+                level = "Medium"
             else:
-                level = "弱"
+                level = "Weak"
             print(f"   {param}: {interaction:.3f} ({level})")
         
-        # 最敏感的输出指标
-        print("\n3. 各输出指标的最敏感参数:")
+        # Most sensitive output metrics
+        print("\n3. Most Sensitive Parameter for Each Output Metric:")
         for output_name, indices in sensitivity_indices.items():
             max_idx = np.argmax(indices['ST'])
             max_param = param_labels[max_idx]
@@ -456,33 +456,33 @@ def print_key_findings(sensitivity_indices: dict):
 
 
 def main():
-    """主函数"""
-    parser = argparse.ArgumentParser(description='运行Sobol敏感性分析')
+    """Main function"""
+    parser = argparse.ArgumentParser(description='Run Sobol sensitivity analysis')
     parser.add_argument('--config', type=str, default='standard', 
                        choices=['quick', 'standard', 'high_precision', 'full', 'test1'],
-                       help='分析配置类型')
+                       help='Analysis configuration type')
     parser.add_argument('--load', action='store_true', 
-                       help='尝试加载已有结果')
+                       help='Attempt to load existing results')
     parser.add_argument('--no-plots', action='store_true',
-                       help='不生成可视化图表')
+                       help='Do not generate visualization plots')
     parser.add_argument('--output-dir', type=str, 
-                       help='自定义输出目录')
+                       help='Custom output directory')
     parser.add_argument('--n-samples', type=int,
-                       help='自定义样本数')
+                       help='Custom number of samples')
     parser.add_argument('--n-runs', type=int,
-                       help='自定义运行次数')
+                       help='Custom number of runs')
     parser.add_argument('--n-processes', type=int,
-                       help='自定义进程数')
+                       help='Custom number of processes')
     parser.add_argument('--structural-alignment', type=str, default='low',
                        choices=['low', 'high'],
-                       help='结构对齐条件: low (cluster_identity=False) 或 high (cluster_identity=True)')
+                       help='Structural alignment condition: low (cluster_identity=False) or high (cluster_identity=True)')
     parser.add_argument('--morality-ratio', type=float, default=0.0,
                        choices=[0.0, 0.3],
-                       help='道德化率: 0.0 或 0.3')
+                       help='Morality ratio: 0.0 or 0.3')
     
     args = parser.parse_args()
     
-    # 创建自定义配置（如果提供了自定义参数）
+    # Create custom config if custom parameters are provided
     custom_config = None
     if any([args.output_dir, args.n_samples, args.n_runs, args.n_processes]):
         configs = create_analysis_configs(args.structural_alignment, args.morality_ratio)
@@ -502,7 +502,7 @@ def main():
     try:
         start_time = time.time()
         
-        # 运行分析
+        # Run analysis
         analyzer, sensitivity_indices = run_sensitivity_analysis(
             config_name=args.config,
             custom_config=custom_config,
@@ -511,24 +511,15 @@ def main():
             morality_ratio=args.morality_ratio
         )
         
-        # 生成报告
-        generate_reports(
-            analyzer, 
-            sensitivity_indices, 
-            create_plots=not args.no_plots,
-            config_name=args.config,
-            start_time=start_time
-        )
-        
         end_time = time.time()
-        print(f"\n总耗时: {end_time - start_time:.2f} 秒")
-        print(f"结果保存在: {analyzer.config.output_dir}")
+        print(f"\nTotal duration: {end_time - start_time:.2f} seconds")
+        print(f"Results saved in: {analyzer.config.output_dir}")
         
     except KeyboardInterrupt:
-        print("\n分析被用户中断")
+        print("\nAnalysis interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n分析过程中出错: {e}")
+        print(f"\nAn error occurred during analysis: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

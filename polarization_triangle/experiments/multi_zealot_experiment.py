@@ -193,13 +193,13 @@ def average_stats(stats_list):
 
 def generate_average_heatmaps(all_opinion_histories, mode_names, output_dir, heatmap_config=None):
     """
-    生成平均意见分布热图
+    Generate average opinion distribution heatmaps
     
-    参数:
-    all_opinion_histories -- 包含所有运行的意见历史的字典
-    mode_names -- 模式名称列表
-    output_dir -- 输出目录
-    heatmap_config -- 热力图配置字典，包含颜色映射、尺度等参数
+    Parameters:
+    all_opinion_histories -- Dictionary containing opinion histories from all runs
+    mode_names -- List of mode names
+    output_dir -- Output directory
+    heatmap_config -- Heatmap configuration dictionary containing color mapping, scale and other parameters
     """
     print("Generating average heatmaps...")
     
@@ -228,7 +228,7 @@ def generate_average_heatmaps(all_opinion_histories, mode_names, output_dir, hea
         if not mode_histories:
             continue
         
-        # Calculate average opinion distribution（而不是平均意见轨迹）
+        # Calculate average opinion distribution (not average opinion trajectory)
         avg_distribution = calculate_average_opinion_distribution(mode_histories, bins=default_config['bins'])
 
         # start_step = 900
@@ -253,14 +253,14 @@ def generate_average_heatmaps(all_opinion_histories, mode_names, output_dir, hea
 
 def calculate_average_opinion_distribution(opinion_histories, bins=40):
     """
-    计算多次运行的平均意见分布直方图
+    Calculate average opinion distribution histogram from multiple runs
     
-    参数:
-    opinion_histories -- 包含多次运行意见历史的列表
-    bins -- opinion值的分箱数量
+    Parameters:
+    opinion_histories -- List containing opinion histories from multiple runs
+    bins -- Number of bins for opinion values
     
-    返回:
-    numpy.ndarray -- 平均分布直方图数据，形状为(time_steps, bins)
+    Returns:
+    numpy.ndarray -- Average distribution histogram data, shape (time_steps, bins)
     """
     if not opinion_histories:
         return np.array([])
@@ -268,20 +268,20 @@ def calculate_average_opinion_distribution(opinion_histories, bins=40):
     # Get time steps from first history
     num_steps = len(opinion_histories[0])
     
-    # 创建opinion的bins
+    # Create opinion bins
     opinion_bins = np.linspace(-1, 1, bins + 1)
     
-    # 初始化所有运行的分布数据存储
+    # Initialize distribution data storage for all runs
     all_distributions = np.zeros((len(opinion_histories), num_steps, bins))
     
-    # 对每次运行计算分布直方图
+    # Calculate distribution histogram for each run
     for run_idx, history in enumerate(opinion_histories):
         for step in range(min(num_steps, len(history))):
-            # 计算该时间步的opinion分布
+            # Calculate opinion distribution for this time step
             hist, _ = np.histogram(history[step], bins=opinion_bins, range=(-1, 1))
             all_distributions[run_idx, step] = hist
     
-    # 计算平均分布
+    # Calculate average distribution
     avg_distribution = np.mean(all_distributions, axis=0)
     
     return avg_distribution
@@ -290,30 +290,30 @@ def calculate_average_opinion_distribution(opinion_histories, bins=40):
 def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title, filename, bins=40, log_scale=True,
                                                        cmap='viridis', vmin=None, vmax=None, custom_norm=None, start_step=0):
     """
-    从预计算的分布数据绘制热力图
+    Draw heatmap from pre-calculated distribution data
     
-    参数:
-    distribution_data -- 分布数据，形状为(time_steps, bins)
-    title -- 图表标题
-    filename -- 保存文件名
-    bins -- opinion值的分箱数量
-    log_scale -- 是否使用对数比例表示颜色
-    cmap -- 颜色映射方案 ('viridis', 'plasma', 'inferno', 'magma', 'coolwarm', 'RdBu', 'hot', 'jet', etc.)
-    vmin -- 颜色尺度的最小值，如果为None则自动确定
-    vmax -- 颜色尺度的最大值，如果为None则自动确定
-    custom_norm -- 自定义的颜色标准化对象，如果提供则会覆盖log_scale、vmin、vmax
+    Parameters:
+    distribution_data -- Distribution data, shape (time_steps, bins)
+    title -- Chart title
+    filename -- Save filename
+    bins -- Number of bins for opinion values
+    log_scale -- Whether to use logarithmic scale for color representation
+    cmap -- Color mapping scheme ('viridis', 'plasma', 'inferno', 'magma', 'coolwarm', 'RdBu', 'hot', 'jet', etc.)
+    vmin -- Minimum value for color scale, auto-determined if None
+    vmax -- Maximum value for color scale, auto-determined if None
+    custom_norm -- Custom color normalization object, overrides log_scale, vmin, vmax if provided
     """
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm
     
-    # 获取时间步数
+    # Get number of time steps
     time_steps = distribution_data.shape[0]
     
-    # 创建opinion的bins
+    # Create opinion bins
     opinion_bins = np.linspace(-1, 1, bins + 1)
     
     # Create plot
-    # 放大默认字体并禁用 Unicode 负号，避免 10^-1 中负号渲染问题
+    # Enlarge default font and disable Unicode minus sign to avoid rendering issues
     plt.rcParams.update({
         'font.size': 18,
         'axes.titlesize': 26,
@@ -324,37 +324,37 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     })
     fig, ax = plt.subplots(figsize=(20, 12))
     
-    # 创建坐标
-    x = opinion_bins[:-1] + np.diff(opinion_bins) / 2  # opinion值（bin中点）
-    y = np.arange(time_steps)  # 时间步骤索引（用于绘图，从0开始）
+    # Create coordinates
+    x = opinion_bins[:-1] + np.diff(opinion_bins) / 2  # opinion values (bin centers)
+    y = np.arange(time_steps)  # time step indices (for plotting, starting from 0)
     
-    # 确定颜色标准化
+    # Determine color normalization
     if custom_norm is not None:
-        # 使用自定义标准化
+        # Use custom normalization
         norm = custom_norm
         plot_data = distribution_data
     elif log_scale:
-        # 使用对数比例，先将0值替换为最小非零值以避免log(0)错误
+        # Use logarithmic scale, replace 0 values with minimum non-zero value to avoid log(0) error
         min_nonzero = np.min(distribution_data[distribution_data > 0]) if np.any(distribution_data > 0) else 1
         log_data = np.copy(distribution_data)
         log_data[log_data == 0] = min_nonzero
         
-        # 设置对数标准化的范围
+        # Set range for logarithmic normalization
         log_vmin = vmin if vmin is not None else min_nonzero
         log_vmax = vmax if vmax is not None else np.max(log_data)
         norm = LogNorm(vmin=log_vmin, vmax=log_vmax)
         plot_data = log_data
     else:
-        # 使用线性比例
+        # Use linear scale
         linear_vmin = vmin if vmin is not None else np.min(distribution_data)
         linear_vmax = vmax if vmax is not None else np.max(distribution_data)
         norm = plt.Normalize(vmin=linear_vmin, vmax=linear_vmax)
         plot_data = distribution_data
     
-    # 绘制热力图
+    # Draw heatmap
     pcm = ax.pcolormesh(x, y, plot_data, norm=norm, cmap=cmap, shading='auto')
     
-    # 添加颜色条
+    # Add colorbar
     cbar = fig.colorbar(pcm, ax=ax)
     try:
         from matplotlib.ticker import LogFormatter, ScalarFormatter
@@ -371,10 +371,10 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     cbar.set_label('Average Agent Count', fontsize=22)
     cbar.ax.tick_params(labelsize=20)
     
-    # 如果设置了具体的数值范围，可以自定义颜色条刻度
+    # If specific numerical range is set, can customize colorbar ticks
     if vmin is not None and vmax is not None:
         if log_scale and not custom_norm:
-            # 对数尺度的刻度
+            # Logarithmic scale ticks
             ticks = []
             current = vmin
             while current <= vmax:
@@ -384,7 +384,7 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
                 ticks.append(vmax)
             cbar.set_ticks(ticks)
         else:
-            # 线性尺度的刻度
+            # Linear scale ticks
             step = (vmax - vmin) / 5
             cbar.set_ticks([vmin + i*step for i in range(6)])
     
@@ -394,11 +394,11 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     ax.set_title(title, fontsize=26)
     ax.tick_params(axis='both', labelsize=20)
     
-    # 优化Y轴刻度，防止过密，但显示真实的时间步骤
+    # Optimize Y-axis ticks to prevent overcrowding while showing real time steps
     max_ticks = 10
     tick_step = max(1, time_steps // max_ticks)
-    tick_positions = np.arange(0, time_steps, tick_step)  # 在图上的位置（从0开始）
-    tick_labels = [str(start_step + pos) for pos in tick_positions]  # 显示的真实时间步骤
+    tick_positions = np.arange(0, time_steps, tick_step)  # positions on the plot (starting from 0)
+    tick_labels = [str(start_step + pos) for pos in tick_positions]  # displayed real time steps
     ax.set_yticks(tick_positions)
     ax.set_yticklabels(tick_labels)
     
@@ -407,19 +407,19 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     plt.savefig(filename, dpi=300)
     plt.close()
     
-    # 额外创建一个3D视图
+    # Additionally create a 3D view
     fig = plt.figure(figsize=(20, 12))
     ax = fig.add_subplot(111, projection='3d')
     
-    # 选择一些时间步骤来展示（避免过度拥挤）
+    # Select some time steps for display (avoid overcrowding)
     step_interval = max(1, time_steps // 20)
     selected_timesteps = np.arange(0, time_steps, step_interval)
     
-    # 为3D图准备数据
+    # Prepare data for 3D plot
     X, Y = np.meshgrid(x, selected_timesteps)
     selected_data = plot_data[selected_timesteps]
     
-    # 绘制3D表面
+    # Draw 3D surface
     surf = ax.plot_surface(X, Y, selected_data, cmap=cmap, edgecolor='none', alpha=0.8)
     
     # Set labels and title
@@ -429,18 +429,18 @@ def draw_opinion_distribution_heatmap_from_distribution(distribution_data, title
     ax.set_title(f"{title} - 3D View", fontsize=20)
     ax.tick_params(axis='both', labelsize=14)
     
-    # 修复3D图的Y轴刻度显示真实时间步骤
+    # Fix 3D plot Y-axis ticks to display real time steps
     y_tick_positions = selected_timesteps[::max(1, len(selected_timesteps)//5)]
     y_tick_labels = [str(start_step + pos) for pos in y_tick_positions]
     ax.set_yticks(y_tick_positions)
     ax.set_yticklabels(y_tick_labels)
     
-    # 添加颜色条
+    # Add colorbar
     cbar3d = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
     cbar3d.set_label('Average Agent Count', fontsize=16)
     cbar3d.ax.tick_params(labelsize=12)
     
-    # 保存3D图
+    # Save 3D plot
     waterfall_filename = filename.replace('.png', '_3d.png')
     plt.tight_layout()
     plt.savefig(waterfall_filename, dpi=300)
@@ -451,24 +451,24 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     """
     Plot average statistics charts
     
-    参数:
-    avg_stats -- 平均统计数据字典
-    mode_names -- 模式名称列表
-    output_dir -- 输出目录
-    steps -- 模拟步数
+    Parameters:
+    avg_stats -- Average statistics data dictionary
+    mode_names -- List of mode names
+    output_dir -- Output directory
+    steps -- Number of simulation steps
     """
-    # 确保统计目录存在
+    # Ensure statistics directory exists
     stats_dir = os.path.join(output_dir, "statistics")
     if not os.path.exists(stats_dir):
         os.makedirs(stats_dir)
     
     step_values = range(steps)
     
-    # 使用不同颜色和线型
+    # Use different colors and line styles
     colors = ['blue', 'red', 'green', 'purple']
     linestyles = ['-', '--', '-.', ':']
     
-    # 1. 绘制平均意见值对比图
+    # 1. Plot average opinion value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["mean_opinions"], 
@@ -482,7 +482,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_mean_opinions.png"), dpi=300)
     plt.close()
     
-    # 2. 绘制平均绝对意见值对比图
+    # 2. Plot average absolute opinion value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["mean_abs_opinions"], 
@@ -496,7 +496,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_mean_abs_opinions.png"), dpi=300)
     plt.close()
     
-    # 3. 绘制非zealot方差对比图
+    # 3. Plot non-zealot variance comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["non_zealot_variance"], 
@@ -510,7 +510,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_non_zealot_variance.png"), dpi=300)
     plt.close()
     
-    # 4. 绘制社区内部方差对比图
+    # 4. Plot intra-community variance comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["cluster_variance"], 
@@ -524,7 +524,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_cluster_variance.png"), dpi=300)
     plt.close()
     
-    # 5. 绘制负面意见数量对比图
+    # 5. Plot negative opinion count comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["negative_counts"], 
@@ -538,7 +538,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_negative_counts.png"), dpi=300)
     plt.close()
     
-    # 6. 绘制负面意见均值对比图
+    # 6. Plot negative opinion mean value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["negative_means"], 
@@ -552,7 +552,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_negative_means.png"), dpi=300)
     plt.close()
     
-    # 7. 绘制正面意见数量对比图
+    # 7. Plot positive opinion count comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["positive_counts"], 
@@ -566,7 +566,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_positive_counts.png"), dpi=300)
     plt.close()
     
-    # 8. 绘制正面意见均值对比图
+    # 8. Plot positive opinion mean value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(step_values, avg_stats[mode]["positive_means"], 
@@ -580,7 +580,7 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
     plt.savefig(os.path.join(stats_dir, "avg_positive_means.png"), dpi=300)
     plt.close()
     
-    # 9. 绘制极化指数对比图（如果有数据）
+    # 9. Plot polarization index comparison chart (if data available)
     has_polarization_data = all(
         "polarization_index" in avg_stats[mode] and len(avg_stats[mode]["polarization_index"]) > 0 
         for mode in mode_names
@@ -601,21 +601,21 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
         plt.savefig(os.path.join(stats_dir, "avg_polarization_index.png"), dpi=300)
         plt.close()
     
-    # 10. 新增：绘制identity平均意见对比图
+    # 10. New: Plot identity average opinion comparison chart
     has_identity_data = all(
         "identity_1_mean_opinions" in avg_stats[mode] and "identity_neg1_mean_opinions" in avg_stats[mode]
         for mode in mode_names
     )
     
     if has_identity_data:
-        # 10a. 两种identity的平均opinion对比图
+        # 10a. Comparison chart of average opinions for two identity types
         plt.figure(figsize=(15, 7))
         for i, mode in enumerate(mode_names):
-            # Identity = 1的平均opinion（实线）
+            # Average opinion for Identity = 1 (solid line)
             plt.plot(step_values, avg_stats[mode]["identity_1_mean_opinions"], 
                     label=f'{mode} - Identity +1', 
                     color=colors[i], linestyle='-')
-            # Identity = -1的平均opinion（虚线）
+            # Average opinion for Identity = -1 (dashed line)
             plt.plot(step_values, avg_stats[mode]["identity_neg1_mean_opinions"], 
                     label=f'{mode} - Identity -1', 
                     color=colors[i], linestyle='--')
@@ -628,10 +628,10 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
         plt.savefig(os.path.join(stats_dir, "avg_identity_mean_opinions.png"), dpi=300)
         plt.close()
         
-        # 10b. identity意见差值绝对值对比图
+        # 10b. Absolute value comparison chart of identity opinion differences
         plt.figure(figsize=(12, 7))
         for i, mode in enumerate(mode_names):
-            # 计算绝对值
+            # Calculate absolute values
             abs_differences = [abs(diff) for diff in avg_stats[mode]["identity_opinion_differences"]]
             plt.plot(step_values, abs_differences, 
                     label=f'{mode}', 
@@ -644,22 +644,22 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
         plt.savefig(os.path.join(stats_dir, "avg_identity_opinion_differences_abs.png"), dpi=300)
         plt.close()
     
-    # 11. 保存平均统计数据到CSV文件
+    # 11. Save average statistical data to CSV file
     stats_csv = os.path.join(stats_dir, "avg_opinion_stats.csv")
     with open(stats_csv, "w") as f:
-        # 写入标题行
+        # Write header row
         f.write("step")
         for mode in mode_names:
             f.write(f",{mode}_mean_opinion,{mode}_mean_abs_opinion,{mode}_non_zealot_variance,{mode}_cluster_variance")
             f.write(f",{mode}_negative_count,{mode}_negative_mean,{mode}_positive_count,{mode}_positive_mean")
             if "polarization_index" in avg_stats[mode] and len(avg_stats[mode]["polarization_index"]) > 0:
                 f.write(f",{mode}_polarization_index")
-            # 添加identity相关的列
+            # Add identity-related columns
             if "identity_1_mean_opinions" in avg_stats[mode]:
                 f.write(f",{mode}_identity_1_mean_opinion,{mode}_identity_neg1_mean_opinion,{mode}_identity_opinion_difference")
         f.write("\n")
         
-        # 写入数据
+        # Write data
         for step in range(steps):
             f.write(f"{step}")
             for mode in mode_names:
@@ -671,10 +671,10 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
                 f.write(f",{avg_stats[mode]['negative_means'][step]:.4f}")
                 f.write(f",{avg_stats[mode]['positive_counts'][step]:.1f}")
                 f.write(f",{avg_stats[mode]['positive_means'][step]:.4f}")
-                # 如果有极化指数数据，添加到CSV
+                # Add polarization index data to CSV if available
                 if "polarization_index" in avg_stats[mode] and step < len(avg_stats[mode]["polarization_index"]):
                     f.write(f",{avg_stats[mode]['polarization_index'][step]:.4f}")
-                # 添加identity相关数据
+                # Add identity-related data
                 if "identity_1_mean_opinions" in avg_stats[mode] and step < len(avg_stats[mode]["identity_1_mean_opinions"]):
                     f.write(f",{avg_stats[mode]['identity_1_mean_opinions'][step]:.4f}")
                     f.write(f",{avg_stats[mode]['identity_neg1_mean_opinions'][step]:.4f}")
@@ -685,13 +685,13 @@ def plot_average_statistics(avg_stats, mode_names, output_dir, steps):
 if __name__ == "__main__":
     # Run multiple zealot experiments
     run_multi_zealot_experiment(
-        runs=10,                  # 运行10次实验
-        steps=100,                # 每次运行100步
-        initial_scale=0.1,        # 初始意见缩放到10%
-        morality_rate=0.2,        # moralizing的比例为20%
-        zealot_morality=True,     # zealot全部moralizing
-        identity_clustered=True,  # 按identity进行clustered的初始化
-        zealot_count=10,          # 10个zealot
-        zealot_mode="clustered",  # 使用clustered zealot模式
-        base_seed=42              # 基础随机种子
+        runs=10,                  # Run 10 experiments
+        steps=100,                # 100 steps per run
+        initial_scale=0.1,        # Scale initial opinions to 10%
+        morality_rate=0.2,        # Moralizing ratio is 20%
+        zealot_morality=True,     # All zealots are moralizing
+        identity_clustered=True,  # Clustered initialization by identity
+        zealot_count=10,          # 10 zealots
+        zealot_mode="clustered",  # Use clustered zealot mode
+        base_seed=42              # Base random seed
     ) 

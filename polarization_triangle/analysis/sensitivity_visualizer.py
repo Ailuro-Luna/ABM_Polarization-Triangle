@@ -37,7 +37,7 @@ class SensitivityVisualizer:
             'cohesion_factor': '#96CEB4'  # Green - cohesion factor
         }
         
-        # 设置图表风格
+        # Set chart style
         sns.set_style("whitegrid")
         sns.set_palette("husl")
     
@@ -50,16 +50,16 @@ class SensitivityVisualizer:
         indices = sensitivity_indices[output_name]
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
         
-        # 准备数据
+        # Prepare data
         s1_values = indices['S1']
         st_values = indices['ST']
         s1_conf = indices['S1_conf']
         st_conf = indices['ST_conf']
         
-        # 创建图形
+        # Create figure
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=self.figsize)
         
-        # 一阶敏感性指数
+        # First-order sensitivity index
         x_pos = np.arange(len(param_names))
         bars1 = ax1.bar(x_pos, s1_values, yerr=s1_conf, 
                        color=[self.colors[name] for name in param_names],
@@ -71,7 +71,7 @@ class SensitivityVisualizer:
         ax1.set_xticklabels(['α', 'β', 'γ', 'cohesion_factor'])
         ax1.grid(axis='y', alpha=0.3)
         
-        # 总敏感性指数
+        # Total sensitivity index
         bars2 = ax2.bar(x_pos, st_values, yerr=st_conf,
                        color=[self.colors[name] for name in param_names],
                        alpha=0.7, capsize=5)
@@ -82,7 +82,7 @@ class SensitivityVisualizer:
         ax2.set_xticklabels(['α', 'β', 'γ', 'cohesion_factor'])
         ax2.grid(axis='y', alpha=0.3)
         
-        # 添加数值标签
+        # Add numerical labels
         for i, (s1, st) in enumerate(zip(s1_values, st_values)):
             ax1.text(i, s1 + s1_conf[i] + 0.01, f'{s1:.3f}', 
                     ha='center', va='bottom', fontsize=9)
@@ -102,7 +102,7 @@ class SensitivityVisualizer:
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
         output_names = list(sensitivity_indices.keys())
         
-        # 准备数据矩阵
+        # Prepare data matrix
         data_matrix = []
         for output_name in output_names:
             if metric_type in sensitivity_indices[output_name]:
@@ -113,27 +113,27 @@ class SensitivityVisualizer:
         
         data_matrix = np.array(data_matrix)
         
-        # 创建热力图
+        # Create heatmap
         fig, ax = plt.subplots(figsize=self.figsize)
         
         im = ax.imshow(data_matrix, cmap='YlOrRd', aspect='auto')
         
-        # 设置坐标轴
+        # Set axes
         ax.set_xticks(np.arange(len(param_names)))
         ax.set_yticks(np.arange(len(output_names)))
         ax.set_xticklabels(['α', 'β', 'γ', 'cohesion_factor'])
         ax.set_yticklabels(output_names)
         
-        # 旋转x轴标签
+        # Rotate x-axis labels
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
         
-        # 添加数值标签
+        # Add numerical labels
         for i in range(len(output_names)):
             for j in range(len(param_names)):
                 text = ax.text(j, i, f'{data_matrix[i, j]:.3f}',
                              ha="center", va="center", color="black", fontsize=8)
         
-        # 添加颜色条
+        # Add colorbar
         cbar = plt.colorbar(im, ax=ax, shrink=0.8)
         cbar.set_label(f'{metric_type} Sensitivity Index')
         
@@ -147,11 +147,11 @@ class SensitivityVisualizer:
     
     def plot_interaction_effects(self, sensitivity_indices: Dict[str, Dict], 
                                save_path: str = None) -> plt.Figure:
-        """绘制交互效应分析图"""
+        """Draw interaction effects analysis chart"""
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
         output_names = list(sensitivity_indices.keys())
         
-        # 计算交互效应强度 (ST - S1)
+        # Calculate interaction effect strength (ST - S1)
         interaction_data = []
         for output_name in output_names:
             indices = sensitivity_indices[output_name]
@@ -160,10 +160,10 @@ class SensitivityVisualizer:
         
         interaction_matrix = np.array(interaction_data)
         
-        # 创建图形
+        # Create figure
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
         
-        # 1. 交互效应热力图
+        # 1. Interaction effect heatmap
         im1 = ax1.imshow(interaction_matrix, cmap='RdBu_r', aspect='auto')
         ax1.set_xticks(np.arange(len(param_names)))
         ax1.set_yticks(np.arange(len(output_names)))
@@ -171,7 +171,7 @@ class SensitivityVisualizer:
         ax1.set_yticklabels(output_names)
         ax1.set_title('Interaction Effect Strength (ST - S1)')
         
-        # 添加数值标签
+        # Add numerical labels
         for i in range(len(output_names)):
             for j in range(len(param_names)):
                 text = ax1.text(j, i, f'{interaction_matrix[i, j]:.3f}',
@@ -181,7 +181,7 @@ class SensitivityVisualizer:
         
         plt.colorbar(im1, ax=ax1, shrink=0.8)
         
-        # 2. 平均交互效应条形图
+        # 2. Average interaction effect bar chart
         mean_interactions = np.mean(interaction_matrix, axis=0)
         bars = ax2.bar(range(len(param_names)), mean_interactions,
                       color=[self.colors[name] for name in param_names],
@@ -193,7 +193,7 @@ class SensitivityVisualizer:
         ax2.set_xticklabels(['α', 'β', 'γ', 'cohesion_factor'])
         ax2.grid(axis='y', alpha=0.3)
         
-        # 添加数值标签
+        # Add numerical labels
         for i, val in enumerate(mean_interactions):
             ax2.text(i, val + 0.001, f'{val:.3f}', ha='center', va='bottom')
         
@@ -206,11 +206,11 @@ class SensitivityVisualizer:
     
     def plot_parameter_ranking(self, sensitivity_indices: Dict[str, Dict], 
                              metric_type: str = 'ST', save_path: str = None) -> plt.Figure:
-        """绘制参数重要性排序图"""
+        """Draw parameter importance ranking chart"""
         param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
         output_names = list(sensitivity_indices.keys())
         
-        # 计算每个参数在所有Output metric上的平均敏感性
+        # Calculate average sensitivity of each parameter across all output metrics
         param_importance = {}
         for i, param in enumerate(param_names):
             importances = []
@@ -219,10 +219,10 @@ class SensitivityVisualizer:
                     importances.append(sensitivity_indices[output_name][metric_type][i])
             param_importance[param] = np.mean(importances) if importances else 0.0
         
-        # 按重要性排序
+        # Sort by importance
         sorted_params = sorted(param_importance.items(), key=lambda x: x[1], reverse=True)
         
-        # 创建图形
+        # Create figure
         fig, ax = plt.subplots(figsize=(10, 6))
         
         params, values = zip(*sorted_params)
@@ -238,7 +238,7 @@ class SensitivityVisualizer:
         ax.set_title(f'Parameter Importance Ranking (based on {metric_type})')
         ax.grid(axis='x', alpha=0.3)
         
-        # 添加数值标签
+        # Add numerical labels
         for i, val in enumerate(values):
             ax.text(val + 0.001, i, f'{val:.3f}', va='center', ha='left')
         
@@ -253,13 +253,13 @@ class SensitivityVisualizer:
                                   param_samples: np.ndarray = None,
                                   simulation_results: List[Dict[str, float]] = None,
                                   output_dir: str = "sensitivity_plots") -> Dict[str, str]:
-        """创建综合分析报告"""
+        """Create comprehensive analysis report"""
         os.makedirs(output_dir, exist_ok=True)
         
         plot_files = {}
         
         try:
-            # 1. 为每个Output metric创建敏感性对比图
+            # 1. Create sensitivity comparison charts for each output metric
             for output_name in sensitivity_indices.keys():
                 filename = f"{output_name}_sensitivity.png"
                 filepath = os.path.join(output_dir, filename)
@@ -267,7 +267,7 @@ class SensitivityVisualizer:
                 plot_files[f"{output_name}_comparison"] = filepath
                 plt.close(fig)
             
-            # 2. 创建热力图
+            # 2. Create heatmaps
             for metric_type in ['S1', 'ST']:
                 filename = f"heatmap_{metric_type}.png"
                 filepath = os.path.join(output_dir, filename)
@@ -275,14 +275,14 @@ class SensitivityVisualizer:
                 plot_files[f"heatmap_{metric_type}"] = filepath
                 plt.close(fig)
             
-            # 3. 创建交互效应图
+            # 3. Create interaction effects chart
             filename = "interaction_effects.png"
             filepath = os.path.join(output_dir, filename)
             fig = self.plot_interaction_effects(sensitivity_indices, filepath)
             plot_files["interaction_effects"] = filepath
             plt.close(fig)
             
-            # 4. 创建参数排序图
+            # 4. Create parameter ranking charts
             for metric_type in ['S1', 'ST']:
                 filename = f"parameter_ranking_{metric_type}.png"
                 filepath = os.path.join(output_dir, filename)
@@ -290,17 +290,17 @@ class SensitivityVisualizer:
                 plot_files[f"ranking_{metric_type}"] = filepath
                 plt.close(fig)
             
-            print(f"所有图表已保存到: {output_dir}")
+            print(f"All charts have been saved to: {output_dir}")
             
         except Exception as e:
-            warnings.warn(f"创建图表时出错: {e}")
+            warnings.warn(f"Error creating charts: {e}")
         
         return plot_files
 
 
 def create_sensitivity_report_example():
-    """创建敏感性分析可视化报告的示例"""
-    # 模拟敏感性分析结果
+    """Create example sensitivity analysis visualization report"""
+    # Simulate sensitivity analysis results
     np.random.seed(42)
     param_names = ['alpha', 'beta', 'gamma', 'cohesion_factor']
     output_names = ['polarization_index', 'opinion_variance', 'extreme_ratio']
@@ -316,15 +316,15 @@ def create_sensitivity_report_example():
             'S2_conf': np.random.random((4, 4)) * 0.1
         }
     
-    # 创建可视化器
+    # Create visualizer
     visualizer = SensitivityVisualizer()
     
-    # 创建综合报告
+    # Create comprehensive report
     plot_files = visualizer.create_comprehensive_report(sensitivity_indices)
     
     return visualizer, sensitivity_indices
 
 
 if __name__ == "__main__":
-    # 运行示例
+    # Run example
     create_sensitivity_report_example() 

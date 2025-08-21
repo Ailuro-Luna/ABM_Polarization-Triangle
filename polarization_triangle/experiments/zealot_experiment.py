@@ -228,39 +228,39 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
         # Get opinions of non-zealots
         non_zealot_opinions = np.delete(step_opinions, zealot_ids) if zealot_ids else step_opinions
         
-        # 统计负面意见
+        # Count negative opinions
         negative_mask = non_zealot_opinions < 0
         negative_opinions = non_zealot_opinions[negative_mask]
         negative_count = len(negative_opinions)
         negative_counts.append(negative_count)
         negative_means.append(np.mean(negative_opinions) if negative_count > 0 else 0)
         
-        # 统计正面意见
+        # Count positive opinions
         positive_mask = non_zealot_opinions > 0
         positive_opinions = non_zealot_opinions[positive_mask]
         positive_count = len(positive_opinions)
         positive_counts.append(positive_count)
         positive_means.append(np.mean(positive_opinions) if positive_count > 0 else 0)
     
-    # 6. 新增：计算每个时刻两种identity各自的平均opinion以及它们的差值
+    # 6. New: Calculate average opinion of each identity type at each time step and their difference
     identity_1_mean_opinions = []
     identity_neg1_mean_opinions = []
     identity_opinion_differences = []
     
-    # 找到identity为1和-1的agents（排除zealots）
+    # Find agents with identity 1 and -1 (excluding zealots)
     identity_1_agents = []
     identity_neg1_agents = []
     
     for i in range(sim.num_agents):
         if zealot_ids and i in zealot_ids:
-            continue  # 跳过zealots
+            continue  # Skip zealots
         if sim.identities[i] == 1:
             identity_1_agents.append(i)
         elif sim.identities[i] == -1:
             identity_neg1_agents.append(i)
     
     for step_opinions in trajectory:
-        # 计算identity为1的agents的平均opinion
+        # Calculate average opinion of agents with identity=1
         if identity_1_agents:
             identity_1_opinions = step_opinions[identity_1_agents]
             identity_1_mean = np.mean(identity_1_opinions)
@@ -268,7 +268,7 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
             identity_1_mean = 0.0
         identity_1_mean_opinions.append(identity_1_mean)
         
-        # 计算identity为-1的agents的平均opinion
+        # Calculate average opinion of agents with identity=-1
         if identity_neg1_agents:
             identity_neg1_opinions = step_opinions[identity_neg1_agents]
             identity_neg1_mean = np.mean(identity_neg1_opinions)
@@ -276,14 +276,14 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
             identity_neg1_mean = 0.0
         identity_neg1_mean_opinions.append(identity_neg1_mean)
         
-        # 计算两种identity平均opinion的差值
+        # Calculate difference between average opinions of the two identities
         difference = identity_1_mean - identity_neg1_mean
         identity_opinion_differences.append(difference)
 
-    # 获取极化指数历史
+    # Get polarization index history
     polarization_history = sim.get_polarization_history() if hasattr(sim, 'get_polarization_history') else []
     
-    # 整合所有统计数据
+    # Integrate all statistical data
     stats = {
         "mean_opinions": mean_opinions,
         "mean_abs_opinions": mean_abs_opinions,
@@ -295,14 +295,14 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
         "positive_means": positive_means,
         "community_variance_history": community_variance_history,
         "communities": communities,
-        "polarization_index": polarization_history,  # 添加极化指数历史
-        # 新增identity相关统计
+        "polarization_index": polarization_history,  # Add polarization index history
+        # New identity-related statistics
         "identity_1_mean_opinions": identity_1_mean_opinions,
         "identity_neg1_mean_opinions": identity_neg1_mean_opinions,
         "identity_opinion_differences": identity_opinion_differences
     }
     
-    # 单独保存每个模式的统计数据到CSV文件
+    # Save statistics data for each mode separately to CSV file
     stats_dir = os.path.join(results_dir, "statistics")
     if not os.path.exists(stats_dir):
         os.makedirs(stats_dir)
@@ -313,8 +313,8 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
         f.write("step,mean_opinion,mean_abs_opinion,non_zealot_variance,cluster_variance,")
         f.write("negative_count,negative_mean,positive_count,positive_mean")
         if polarization_history:
-            f.write(",polarization_index")  # 添加极化指数列
-        # 添加identity相关的列
+            f.write(",polarization_index")  # Add polarization index column
+        # Add identity-related columns
         f.write(",identity_1_mean_opinion,identity_neg1_mean_opinion,identity_opinion_difference")
         f.write("\n")
         
@@ -323,32 +323,32 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
             f.write(f"{non_zealot_var[step]:.4f},{cluster_variances[step]:.4f},")
             f.write(f"{negative_counts[step]},{negative_means[step]:.4f},")
             f.write(f"{positive_counts[step]},{positive_means[step]:.4f}")
-            # 如果有极化指数数据，添加到CSV
+            # Add polarization index data to CSV if available
             if polarization_history and step < len(polarization_history):
                 f.write(f",{polarization_history[step]:.4f}")
-            # 添加identity相关数据
+            # Add identity-related data
             f.write(f",{identity_1_mean_opinions[step]:.4f}")
             f.write(f",{identity_neg1_mean_opinions[step]:.4f}")
             f.write(f",{identity_opinion_differences[step]:.4f}")
             f.write("\n")
     
-    # 保存每个社区的方差数据到单独的CSV文件
+    # Save variance data for each community to separate CSV file
     community_csv = os.path.join(stats_dir, f"{file_prefix}_community_variances.csv")
     with open(community_csv, "w") as f:
-        # 写入标题行
+        # Write header row
         f.write("step")
         for community_id in sorted(community_variance_history.keys()):
             f.write(f",community_{community_id}")
         f.write("\n")
         
-        # 写入数据
+        # Write data
         for step in range(num_steps):
             f.write(f"{step}")
             for community_id in sorted(community_variance_history.keys()):
                 if step < len(community_variance_history[community_id]):
                     f.write(f",{community_variance_history[community_id][step]:.4f}")
                 else:
-                    f.write(",0.0000")  # 防止索引越界
+                    f.write(",0.0000")  # Prevent index out of bounds
             f.write("\n")
     
     return stats
@@ -356,14 +356,14 @@ def generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_
 
 def plot_community_variances(stats, mode_name, results_dir):
     """
-    绘制每个社区的意见方差变化图
+    Plot opinion variance change for each community
     
-    参数:
-    stats -- 统计数据字典
-    mode_name -- 模式名称
-    results_dir -- 结果输出目录
+    Parameters:
+    stats -- Statistics data dictionary
+    mode_name -- Mode name
+    results_dir -- Results output directory
     """
-    # 确保统计目录存在
+    # Ensure statistics directory exists
     stats_dir = os.path.join(results_dir, "statistics")
     if not os.path.exists(stats_dir):
         os.makedirs(stats_dir)
@@ -372,22 +372,22 @@ def plot_community_variances(stats, mode_name, results_dir):
     community_variance_history = stats["community_variance_history"]
     communities = stats["communities"]
     
-    # 如果社区太多，可能图会很乱，所以限制只显示大的社区
-    # 计算每个社区的大小
+    # If there are too many communities, the plot might be messy, so limit to show only large communities
+    # Calculate size of each community
     community_sizes = {comm_id: len(members) for comm_id, members in communities.items()}
     
-    # 按大小排序社区
+    # Sort communities by size
     sorted_communities = sorted(community_sizes.items(), key=lambda x: x[1], reverse=True)
     
-    # 选取前10个最大的社区（或者全部，如果不足10个）
+    # Select top 10 largest communities (or all, if fewer than 10)
     top_communities = [comm_id for comm_id, size in sorted_communities[:min(10, len(sorted_communities))]]
     
-    # 绘制社区方差图
+    # Plot community variance chart
     plt.figure(figsize=(12, 8))
     
-    # 使用不同颜色和线型
+    # Use different colors and line styles
     colors = plt.cm.tab10(np.linspace(0, 1, len(top_communities)))
-    linestyles = ['-', '--', '-.', ':'] * 3  # 重复几次以确保有足够的线型
+    linestyles = ['-', '--', '-.', ':'] * 3  # Repeat several times to ensure sufficient line styles
     
     for i, community_id in enumerate(top_communities):
         variance_history = community_variance_history[community_id]
@@ -408,14 +408,14 @@ def plot_community_variances(stats, mode_name, results_dir):
 
 def plot_comparative_statistics(all_stats, mode_names, results_dir):
     """
-    绘制比较性统计图表，将不同模式的统计数据在同一张图上显示
+    Plot comparative statistical charts, displaying statistical data from different modes on the same chart
     
-    参数:
-    all_stats -- 包含不同模式统计数据的字典
-    mode_names -- 不同模式的名称列表
-    results_dir -- 结果输出目录
+    Parameters:
+    all_stats -- Dictionary containing statistical data from different modes
+    mode_names -- List of names for different modes
+    results_dir -- Results output directory
     """
-    # 确保统计目录存在
+    # Ensure statistics directory exists
     stats_dir = os.path.join(results_dir, "statistics")
     if not os.path.exists(stats_dir):
         os.makedirs(stats_dir)
@@ -423,11 +423,11 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     num_steps = len(all_stats[mode_names[0]]["mean_opinions"])
     steps = range(num_steps)
     
-    # 使用不同颜色和线型
+    # Use different colors and line styles
     colors = ['blue', 'red', 'green', 'purple']
     linestyles = ['-', '--', '-.', ':']
     
-    # 1. 绘制平均意见值对比图
+    # 1. Plot average opinion value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["mean_opinions"], 
@@ -441,7 +441,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_mean_opinions.png"), dpi=300)
     plt.close()
     
-    # 2. 绘制平均绝对意见值对比图
+    # 2. Plot average absolute opinion value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["mean_abs_opinions"], 
@@ -455,7 +455,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_mean_abs_opinions.png"), dpi=300)
     plt.close()
     
-    # 3. 绘制非zealot方差对比图
+    # 3. Plot non-zealot variance comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["non_zealot_variance"], 
@@ -469,7 +469,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_non_zealot_variance.png"), dpi=300)
     plt.close()
     
-    # 4. 绘制社区内部方差对比图
+    # 4. Plot intra-community variance comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["cluster_variance"], 
@@ -483,7 +483,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_cluster_variance.png"), dpi=300)
     plt.close()
     
-    # 5. 绘制负面意见数量对比图
+    # 5. Plot negative opinion count comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["negative_counts"], 
@@ -497,7 +497,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_negative_counts.png"), dpi=300)
     plt.close()
     
-    # 6. 绘制负面意见均值对比图
+    # 6. Plot negative opinion mean value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["negative_means"], 
@@ -511,7 +511,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_negative_means.png"), dpi=300)
     plt.close()
     
-    # 7. 绘制正面意见数量对比图
+    # 7. Plot positive opinion count comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["positive_counts"], 
@@ -525,7 +525,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_positive_counts.png"), dpi=300)
     plt.close()
     
-    # 8. 绘制正面意见均值对比图
+    # 8. Plot positive opinion mean value comparison chart
     plt.figure(figsize=(12, 7))
     for i, mode in enumerate(mode_names):
         plt.plot(steps, all_stats[mode]["positive_means"], 
@@ -539,7 +539,7 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
     plt.savefig(os.path.join(stats_dir, "comparison_positive_means.png"), dpi=300)
     plt.close()
     
-    # 9. 绘制极化指数对比图（如果有数据）
+    # 9. Plot polarization index comparison chart (if data available)
     has_polarization_data = all(
         "polarization_index" in all_stats[mode] and len(all_stats[mode]["polarization_index"]) > 0 
         for mode in mode_names
@@ -560,21 +560,21 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
         plt.savefig(os.path.join(stats_dir, "comparison_polarization_index.png"), dpi=300)
         plt.close()
     
-    # 10. 新增：绘制identity平均意见对比图
+    # 10. New: Plot identity average opinion comparison chart
     has_identity_data = all(
         "identity_1_mean_opinions" in all_stats[mode] and "identity_neg1_mean_opinions" in all_stats[mode]
         for mode in mode_names
     )
     
     if has_identity_data:
-        # 10a. 两种identity的平均opinion对比图
+        # 10a. Comparison chart of average opinions for two identity types
         plt.figure(figsize=(15, 7))
         for i, mode in enumerate(mode_names):
-            # Identity = 1的平均opinion（实线）
+            # Average opinion for Identity = 1 (solid line)
             plt.plot(steps, all_stats[mode]["identity_1_mean_opinions"], 
                     label=f'{mode} - Identity +1', 
                     color=colors[i], linestyle='-')
-            # Identity = -1的平均opinion（虚线）
+            # Average opinion for Identity = -1 (dashed line)
             plt.plot(steps, all_stats[mode]["identity_neg1_mean_opinions"], 
                     label=f'{mode} - Identity -1', 
                     color=colors[i], linestyle='--')
@@ -587,10 +587,10 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
         plt.savefig(os.path.join(stats_dir, "comparison_identity_mean_opinions.png"), dpi=300)
         plt.close()
         
-        # 10b. identity意见差值绝对值对比图
+        # 10b. Absolute value comparison chart of identity opinion differences
         plt.figure(figsize=(12, 7))
         for i, mode in enumerate(mode_names):
-            # 计算绝对值
+            # Calculate absolute values
             abs_differences = [abs(diff) for diff in all_stats[mode]["identity_opinion_differences"]]
             plt.plot(steps, abs_differences, 
                     label=f'{mode}', 
@@ -603,22 +603,22 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
         plt.savefig(os.path.join(stats_dir, "comparison_identity_opinion_differences_abs.png"), dpi=300)
         plt.close()
     
-    # 11. 保存组合数据到CSV文件
+    # 11. Save combined data to CSV file
     stats_csv = os.path.join(stats_dir, "comparison_opinion_stats.csv")
     with open(stats_csv, "w") as f:
-        # 写入标题行
+        # Write header row
         f.write("step")
         for mode in mode_names:
             f.write(f",{mode}_mean_opinion,{mode}_mean_abs_opinion,{mode}_non_zealot_variance,{mode}_cluster_variance")
             f.write(f",{mode}_negative_count,{mode}_negative_mean,{mode}_positive_count,{mode}_positive_mean")
             if "polarization_index" in all_stats[mode] and len(all_stats[mode]["polarization_index"]) > 0:
                 f.write(f",{mode}_polarization_index")
-            # 添加identity相关的列
+            # Add identity-related columns
             if "identity_1_mean_opinions" in all_stats[mode]:
                 f.write(f",{mode}_identity_1_mean_opinion,{mode}_identity_neg1_mean_opinion,{mode}_identity_opinion_difference")
         f.write("\n")
         
-        # 写入数据
+        # Write data
         for step in range(num_steps):
             f.write(f"{step}")
             for mode in mode_names:
@@ -630,10 +630,10 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
                 f.write(f",{all_stats[mode]['negative_means'][step]:.4f}")
                 f.write(f",{all_stats[mode]['positive_counts'][step]}")
                 f.write(f",{all_stats[mode]['positive_means'][step]:.4f}")
-                # 如果有极化指数数据，添加到CSV
+                # Add polarization index data to CSV if available
                 if "polarization_index" in all_stats[mode] and step < len(all_stats[mode]["polarization_index"]):
                     f.write(f",{all_stats[mode]['polarization_index'][step]:.4f}")
-                # 添加identity相关数据
+                # Add identity-related data
                 if "identity_1_mean_opinions" in all_stats[mode] and step < len(all_stats[mode]["identity_1_mean_opinions"]):
                     f.write(f",{all_stats[mode]['identity_1_mean_opinions'][step]:.4f}")
                     f.write(f",{all_stats[mode]['identity_neg1_mean_opinions'][step]:.4f}")
@@ -643,22 +643,22 @@ def plot_comparative_statistics(all_stats, mode_names, results_dir):
 
 def run_simulation_and_generate_results(sim, zealot_ids, mode_name, results_dir, steps):
     """
-    运行单个模拟并生成所有可视化结果
+    Run a single simulation and generate all visualization results
     
-    参数:
-    sim -- simulation实例
-    zealot_ids -- zealot的ID列表
-    mode_name -- 模式名称
-    results_dir -- 结果输出目录
-    steps -- 模拟步数
+    Parameters:
+    sim -- simulation instance
+    zealot_ids -- list of zealot IDs
+    mode_name -- Mode name
+    results_dir -- Results output directory
+    steps -- number of simulation steps
     
-    返回:
-    dict -- 包含意见历史记录和统计数据的字典
+    Returns:
+    dict -- dictionary containing opinion history and statistical data
     """
-    # 生成初始状态的网络图
+    # Generate initial state network graph
     file_prefix = mode_name.lower().replace(' ', '_')
     
-    # 绘制初始opinion网络图
+    # Draw initial opinion network graph
     draw_network(
         sim, 
         "opinion", 
@@ -666,7 +666,7 @@ def run_simulation_and_generate_results(sim, zealot_ids, mode_name, results_dir,
         f"{results_dir}/{file_prefix}_initial_opinion_network.png"
     )
     
-    # 绘制初始morality网络图
+    # Draw initial morality network graph
     draw_network(
         sim, 
         "morality", 
@@ -674,7 +674,7 @@ def run_simulation_and_generate_results(sim, zealot_ids, mode_name, results_dir,
         f"{results_dir}/{file_prefix}_initial_morality_network.png"
     )
     
-    # 绘制初始identity网络图
+    # Draw initial identity network graph
     draw_network(
         sim, 
         "identity", 
@@ -682,32 +682,32 @@ def run_simulation_and_generate_results(sim, zealot_ids, mode_name, results_dir,
         f"{results_dir}/{file_prefix}_initial_identity_network.png"
     )
     
-    # 存储意见历史和轨迹
+    # Store opinion history and trajectory
     opinion_history = []
     trajectory = []
 
-    # 运行模拟
+    # Run simulation
     for _ in range(steps):
-        # 更新zealot的意见
+        # Update zealot opinions
         if zealot_ids:
             sim.set_zealot_opinions()
 
-        # 记录意见历史和轨迹
+        # Record opinion history and trajectory
         opinion_history.append(sim.opinions.copy())
         trajectory.append(sim.opinions.copy())
         
-        # 执行模拟步骤（zealot意见会在step中自动重置）
+        # Execute simulation step (zealot opinions will be automatically reset in step)
         sim.step()
         
     
-    # 生成热图
+    # Generate heatmap
     draw_opinion_distribution_heatmap(
         opinion_history, 
         f"Opinion Evolution {mode_name}", 
         f"{results_dir}/{file_prefix}_heatmap.png"
     )
     
-    # 绘制最终网络图 - 意见分布
+    # Draw final network graph - opinion distribution
     draw_network(
         sim, 
         "opinion", 
@@ -715,7 +715,7 @@ def run_simulation_and_generate_results(sim, zealot_ids, mode_name, results_dir,
         f"{results_dir}/{file_prefix}_final_opinion_network.png"
     )
     
-    # 绘制zealot网络图
+    # Draw zealot network graph
     draw_zealot_network(
         sim, 
         zealot_ids, 
@@ -723,16 +723,16 @@ def run_simulation_and_generate_results(sim, zealot_ids, mode_name, results_dir,
         f"{results_dir}/{file_prefix}_network.png"
     )
     
-    # 生成规则使用统计图
+    # Generate rule usage statistics plot
     generate_rule_usage_plots(sim, mode_name, results_dir)
     
-    # 生成激活组件可视化
+    # Generate activation component visualization
     generate_activation_visualizations(sim, trajectory, mode_name, results_dir)
     
-    # 计算意见统计数据
+    # Calculate opinion statistics
     stats = generate_opinion_statistics(sim, trajectory, zealot_ids, mode_name, results_dir)
     
-    # 绘制社区方差图
+    # Draw community variance plot
     plot_community_variances(stats, mode_name, results_dir)
     
     return {
@@ -755,49 +755,49 @@ def run_zealot_experiment(
     network_seed=None
 ):
     """
-    运行zealot实验，比较无zealot、聚类zealot和随机zealot的影响
+    Run zealot experiment, comparing the effects of no zealots, clustered zealots, and random zealots
     
-    参数:
-    steps -- 模拟步数
-    initial_scale -- 初始意见的缩放因子，模拟对新议题的中立态度
-    num_zealots -- zealot的总数量
-    seed -- 随机数种子
-    output_dir -- 结果输出目录（如果为None，则使用默认目录）
-    morality_rate -- moralizing的non-zealot people的比例
-    zealot_morality -- zealot是否全部moralizing
-    identity_clustered -- 是否按identity进行clustered的初始化
-    zealot_mode -- zealot的初始化配置 ("none", "clustered", "random", "high-degree")，若为None则运行所有模式
-    zealot_identity_allocation -- 是否按identity分配zealot，默认启用，启用时zealot只分配给identity为1的agent
-    network_seed -- 网络生成的随机种子，如果为None则使用seed
+    Parameters:
+    steps -- number of simulation steps
+    initial_scale -- scaling factor for initial opinions, simulating neutral attitude towards new issues
+    num_zealots -- total number of zealots
+    seed -- random seed
+    output_dir -- results output directory (if None, use default directory)
+    morality_rate -- proportion of moralizing non-zealot people
+    zealot_morality -- whether all zealots are moralizing
+    identity_clustered -- whether to use clustered initialization by identity
+    zealot_mode -- zealot initialization configuration ("none", "clustered", "random", "high-degree"), if None run all modes
+    zealot_identity_allocation -- whether to allocate zealots by identity, enabled by default, when enabled zealots are only assigned to agents with identity=1
+    network_seed -- random seed for network generation, if None use seed
     
-    返回:
-    dict -- 包含所有模式结果的字典
+    Returns:
+    dict -- dictionary containing results from all modes
     """
-    # 记录开始时间
+    # Record start time
     start_time = time.time()
     
-    # 设置随机数种子
+    # Set random seed
     np.random.seed(seed)
     
-    # 创建基础模拟实例
+    # Create base simulation instance
     base_config = copy.deepcopy(high_polarization_config)
     base_config.cluster_identity = identity_clustered
-    base_config.cluster_morality = False  # 暂时不集群morality
+    base_config.cluster_morality = False  # Temporarily do not cluster morality
     base_config.cluster_opinion = False
     base_config.opinion_distribution = "uniform"
     base_config.alpha = 0.4
     base_config.beta = 0.12
     
-    # 设置网络种子，添加重试机制防止LFR网络生成失败
+    # Set network seed, add retry mechanism to prevent LFR network generation failure
     if network_seed is not None:
         base_config.network_params["seed"] = network_seed
     
-    # 设置道德化率
+    # Set moralization rate
     base_config.morality_rate = morality_rate
 
     print(base_config)
     
-    # 添加网络生成重试机制
+    # Add network generation retry mechanism
     max_network_retries = 5
     network_retry_count = 0
     base_sim = None
@@ -805,12 +805,12 @@ def run_zealot_experiment(
     while network_retry_count < max_network_retries:
         try:
             base_sim = Simulation(base_config)
-            break  # 成功创建则跳出循环
+            break  # Exit loop if successfully created
         except Exception as e:
             network_retry_count += 1
             print(f"Network generation attempt {network_retry_count} failed: {str(e)}")
             if network_retry_count < max_network_retries:
-                # 自适应调整参数，提高成功率/加快失败
+                # Adaptively adjust parameters to improve success rate / accelerate failure
                 base_config.network_params["min_community"] = min(
                     base_config.network_params.get("min_community", 10) + 10, base_config.num_agents // 2
                 )
@@ -829,10 +829,10 @@ def run_zealot_experiment(
     if base_sim is None:
         raise RuntimeError("Failed to create base simulation after multiple attempts")
     
-    # 缩放所有代理的初始意见
+    # Scale initial opinions of all agents
     base_sim.opinions *= initial_scale
     
-    # 根据zealot_mode决定运行哪些模式
+    # Determine which modes to run based on zealot_mode
     run_all_modes = zealot_mode is None
     modes_to_run = []
     
@@ -845,16 +845,16 @@ def run_zealot_experiment(
     if run_all_modes or zealot_mode == "high-degree":
         modes_to_run.append("high-degree")
     
-    # 创建副本用于不同的zealot分布
+    # Create copies for different zealot distributions
     sims = {}
     zealots = {}
     
-    # 对于无zealot模式，使用base_sim
+    # For no-zealot mode, use base_sim
     if "none" in modes_to_run:
         sims["none"] = base_sim
         zealots["none"] = []
     
-    # 对于其他模式，创建副本并设置zealot配置
+    # For other modes, create copies and set zealot configuration
     if "clustered" in modes_to_run:
         clustered_config = copy.deepcopy(base_config)
         clustered_config.enable_zealots = True
@@ -862,12 +862,12 @@ def run_zealot_experiment(
         clustered_config.zealot_mode = "clustered"
         clustered_config.zealot_morality = zealot_morality
         clustered_config.zealot_identity_allocation = zealot_identity_allocation
-        # 确保网络种子一致
+        # Ensure network seed consistency
         if network_seed is not None:
             clustered_config.network_params["seed"] = network_seed
         sims["clustered"] = Simulation(clustered_config)
         sims["clustered"].opinions *= initial_scale
-        sims["clustered"].set_zealot_opinions()  # 重新设置zealot意见，避免被缩放
+        sims["clustered"].set_zealot_opinions()  # Reset zealot opinions to avoid scaling
         zealots["clustered"] = sims["clustered"].get_zealot_ids()
     
     if "random" in modes_to_run:
@@ -877,12 +877,12 @@ def run_zealot_experiment(
         random_config.zealot_mode = "random"
         random_config.zealot_morality = zealot_morality
         random_config.zealot_identity_allocation = zealot_identity_allocation
-        # 确保网络种子一致
+        # Ensure network seed consistency
         if network_seed is not None:
             random_config.network_params["seed"] = network_seed
         sims["random"] = Simulation(random_config)
         sims["random"].opinions *= initial_scale
-        sims["random"].set_zealot_opinions()  # 重新设置zealot意见，避免被缩放
+        sims["random"].set_zealot_opinions()  # Reset zealot opinions to avoid scaling
         zealots["random"] = sims["random"].get_zealot_ids()
     
     if "high-degree" in modes_to_run:
@@ -892,22 +892,22 @@ def run_zealot_experiment(
         degree_config.zealot_mode = "degree"
         degree_config.zealot_morality = zealot_morality
         degree_config.zealot_identity_allocation = zealot_identity_allocation
-        # 确保网络种子一致
+        # Ensure network seed consistency
         if network_seed is not None:
             degree_config.network_params["seed"] = network_seed
         sims["high-degree"] = Simulation(degree_config)
         sims["high-degree"].opinions *= initial_scale
-        sims["high-degree"].set_zealot_opinions()  # 重新设置zealot意见，避免被缩放
+        sims["high-degree"].set_zealot_opinions()  # Reset zealot opinions to avoid scaling
         zealots["high-degree"] = sims["high-degree"].get_zealot_ids()
     
-    # 创建结果目录
+    # Create results directory
     if output_dir is None:
         results_dir = "results/zealot_experiment"
     else:
         results_dir = output_dir
     os.makedirs(results_dir, exist_ok=True)
     
-    # 运行各种模式的模拟并生成结果
+    # Run simulations of various modes and generate results
     results = {}
     
     if "none" in modes_to_run:
@@ -934,18 +934,18 @@ def run_zealot_experiment(
             sims["high-degree"], zealots["high-degree"], "with High-Degree Zealots", results_dir, steps
         )
     
-    # 收集所有模式的统计数据
+    # Collect statistical data from all modes
     all_stats = {}
     for mode_name, mode_results in results.items():
         all_stats[mode_name] = mode_results["stats"]
     
-    # 绘制比较统计图
+    # Draw comparative statistical plots
     mode_names = list(results.keys())
-    if len(mode_names) > 1:  # 只有多于一种模式时才绘制比较图
+    if len(mode_names) > 1:  # Only draw comparison plots when there's more than one mode
         print("Generating comparative statistics plots...")
         plot_comparative_statistics(all_stats, mode_names, results_dir)
     
-    # 计算并打印总耗时
+    # Calculate and print total execution time
     end_time = time.time()
     elapsed_time = end_time - start_time
     hours, remainder = divmod(elapsed_time, 3600)
@@ -953,7 +953,7 @@ def run_zealot_experiment(
     
     print(f"All simulations completed in {int(hours)}h {int(minutes)}m {seconds:.2f}s")
     
-    # 将耗时信息写入结果目录
+    # Write execution time information to results directory
     with open(os.path.join(results_dir, "execution_time.txt"), "w") as f:
         f.write(f"Execution time: {int(hours)}h {int(minutes)}m {seconds:.2f}s\n")
         f.write(f"Configuration: steps={steps}, num_zealots={num_zealots}, morality_rate={morality_rate}, zealot_morality={zealot_morality}\n")
@@ -961,19 +961,19 @@ def run_zealot_experiment(
     
     print("All simulations and visualizations completed.")
     
-    # 返回所有结果
+    # Return all results
     return results
 
 
 def draw_zealot_network(sim, zealot_ids, title, filename):
     """
-    绘制网络图，标记zealot节点
+    Draw network graph marking zealot nodes
     
-    参数:
-    sim -- simulation实例
-    zealot_ids -- zealot的ID列表
-    title -- 图表标题
-    filename -- 输出文件名
+    Parameters:
+    sim -- simulation instance
+    zealot_ids -- list of zealot IDs
+    title -- chart title
+    filename -- output filename
     """
     plt.figure(figsize=(12, 10))
     plt.title(title, fontsize=16)
@@ -981,10 +981,10 @@ def draw_zealot_network(sim, zealot_ids, title, filename):
     node_colors = []
     for i in range(sim.num_agents):
         if i in zealot_ids:
-            node_colors.append('red')  # zealot颜色为红色
+            node_colors.append('red')  # Zealot color is red
         else:
             opinion = sim.opinions[i]
-            # 根据意见值着色其他节点
+            # Color other nodes based on opinion values
             if opinion > 0.5:
                 node_colors.append('blue')
             elif opinion < -0.5:
@@ -992,7 +992,7 @@ def draw_zealot_network(sim, zealot_ids, title, filename):
             else:
                 node_colors.append('gray')
     
-    # 绘制网络
+    # Draw network
     nx.draw(
         sim.graph,
         pos=sim.pos,
@@ -1003,7 +1003,7 @@ def draw_zealot_network(sim, zealot_ids, title, filename):
         alpha=0.8
     )
     
-    # 添加图例
+    # Add legend
     from matplotlib.lines import Line2D
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', label='Zealot', markerfacecolor='red', markersize=10),
@@ -1019,15 +1019,15 @@ def draw_zealot_network(sim, zealot_ids, title, filename):
 
 
 if __name__ == "__main__":
-    # 运行zealot实验
+    # Run zealot experiment
     run_zealot_experiment(
-        steps=500,            # 运行500步
-        initial_scale=0.1,     # 初始意见缩放到10%
-        num_zealots=10,        # 50个zealot
-        seed=114514,            # 固定随机种子以便重现结果
-        morality_rate=0.0,     # 道德化率
-        zealot_morality=False,  # 不全部moralizing
-        identity_clustered=False, # 不按identity进行clustered的初始化
-        zealot_mode=None,       # 运行所有模式
+        steps=500,            # Run 500 steps
+        initial_scale=0.1,     # Scale initial opinions to 10%
+        num_zealots=10,        # 10 zealots
+        seed=114514,            # Fixed random seed for reproducible results
+        morality_rate=0.0,     # Moralization rate
+        zealot_morality=False,  # Not all moralizing
+        identity_clustered=False, # No clustered initialization by identity
+        zealot_mode=None,       # Run all modes
         zealot_identity_allocation=True
     ) 

@@ -41,11 +41,11 @@ TO SWITCH BETWEEN ERROR BAND TYPES:
 In the main function (if __name__ == "__main__":), find the section:
 
     # ===== ERROR BANDS Configuration: Switch by commenting/uncommenting =====
-    # Method 1: Standard deviation error bands（均值 ± 标准差）
+    # Method 1: Standard Deviation Bands: Shows mean ± standard deviation
     # error_band_type = 'std'  # Use standard deviation method
-    # Method 2: Percentile error bands（25th-75th百分位数）
+    # Method 2: Percentile Bands: Shows 25th to 75th percentile range
     # error_band_type = 'percentile'  # Use percentile method
-    # Method 3: Confidence interval error bands（99%置信区间）
+    # Method 3: Confidence Interval Bands: Shows 99% confidence interval
     error_band_type = 'confidence'  # Use confidence interval method
 
 To switch between types:
@@ -92,19 +92,19 @@ def resample_and_smooth_data(x_values, y_values, target_step=2, smooth_window=3)
     Resample and smooth data
     
     Args:
-        x_values: 原始x值数组，如[0,1,2,3,4,5,6,7,8,9,10,...]
-        y_values: 原始y值数组
-        target_step: 目标步长，如2表示从[0,1,2,3,4,5,...]变为[0,2,4,6,8,10,...]
-        smooth_window: 平滑窗口大小
+        x_values: Original x-value array, e.g. [0,1,2,3,4,5,6,7,8,9,10,...]
+        y_values: Original y-value array
+        target_step: Target step size, e.g. 2 means changing from [0,1,2,3,4,5,...] to [0,2,4,6,8,10,...]
+        smooth_window: Smoothing window size
     
     Returns:
-        new_x_values, new_y_values: 重采样和平滑后的数据
+        new_x_values, new_y_values: Resampled and smoothed data
     """
-    # 确保输入是numpy数组
+    # Ensure inputs are numpy arrays
     x_values = np.array(x_values)
     y_values = np.array(y_values)
     
-    # 移除NaN值
+    # Remove NaN values
     valid_mask = ~np.isnan(y_values)
     x_clean = x_values[valid_mask]
     y_clean = y_values[valid_mask]
@@ -112,44 +112,44 @@ def resample_and_smooth_data(x_values, y_values, target_step=2, smooth_window=3)
     if len(x_clean) < 2:
         return x_values, y_values
     
-    # 1. 首先进行局部平滑（减少噪声）
+    # 1. First perform local smoothing (reduce noise)
     if smooth_window >= 3 and len(y_clean) >= smooth_window:
-        # 使用移动平均进行初步平滑
+        # Use moving average for initial smoothing
         kernel = np.ones(smooth_window) / smooth_window
         y_smoothed = np.convolve(y_clean, kernel, mode='same')
         
-        # 处理边界效应
+        # Handle boundary effects
         half_window = smooth_window // 2
         y_smoothed[:half_window] = y_clean[:half_window]
         y_smoothed[-half_window:] = y_clean[-half_window:]
     else:
         y_smoothed = y_clean
     
-    # 2. 创建目标x值（重采样）
+    # 2. Create target x values (resampling)
     x_min, x_max = x_clean[0], x_clean[-1]
     new_x_values = np.arange(x_min, x_max + target_step, target_step)
     
-    # 3. 对每个新的x值，使用附近的数据点进行加权平均
+    # 3. For each new x value, use nearby data points for weighted average
     new_y_values = []
     
     for new_x in new_x_values:
-        # 找到附近的点进行加权平均
+        # Find nearby points for weighted average
         distances = np.abs(x_clean - new_x)
         
-        # 使用高斯权重，距离越近权重越大
+        # Use Gaussian weights, closer distance means higher weight
         weights = np.exp(-distances**2 / (2 * (target_step/2)**2))
         
-        # 只考虑距离在target_step范围内的点
+        # Only consider points within target_step distance
         nearby_mask = distances <= target_step
         if np.sum(nearby_mask) > 0:
             nearby_weights = weights[nearby_mask]
             nearby_y = y_smoothed[nearby_mask]
             
-            # 加权平均
+            # Weighted average
             weighted_y = np.average(nearby_y, weights=nearby_weights)
             new_y_values.append(weighted_y)
         else:
-            # 如果没有附近的点，使用最近的点
+            # If no nearby points, use the closest point
             closest_idx = np.argmin(distances)
             new_y_values.append(y_smoothed[closest_idx])
     
@@ -158,35 +158,35 @@ def resample_and_smooth_data(x_values, y_values, target_step=2, smooth_window=3)
 
 def apply_final_smooth(y_values, method='savgol', window=5):
     """
-    对重采样后的数据进行最终平滑
+    Apply final smoothing to resampled data
     
     Args:
-        y_values: 重采样后的y值
-        method: 平滑方法 ('savgol', 'moving_avg', 'none')
-        window: 平滑窗口
+        y_values: Y values after resampling
+        method: Smoothing method ('savgol', 'moving_avg', 'none')
+        window: Smoothing window
     
     Returns:
-        平滑后的y值
+        Smoothed y values
     """
     if len(y_values) < window or method == 'none':
         return y_values
     
     if method == 'moving_avg':
-        # 移动平均
+        # Moving average
         kernel = np.ones(window) / window
         smoothed = np.convolve(y_values, kernel, mode='same')
     elif method == 'savgol':
-        # Savitzky-Golay滤波（需要scipy）
+        # Savitzky-Golay filtering (requires scipy)
         try:
             from scipy.signal import savgol_filter
-            # 确保window是奇数且小于数据长度
+            # Ensure window is odd and smaller than data length
             actual_window = min(window if window % 2 == 1 else window-1, len(y_values)-1)
             if actual_window >= 3:
                 smoothed = savgol_filter(y_values, actual_window, 2)
             else:
                 smoothed = y_values
         except ImportError:
-            # 如果没有scipy，使用移动平均
+            # If scipy is not available, use moving average
             kernel = np.ones(window) / window
             smoothed = np.convolve(y_values, kernel, mode='same')
     else:
@@ -196,37 +196,37 @@ def apply_final_smooth(y_values, method='savgol', window=5):
 
 
 # =====================================
-# 工具函数
+# Utility functions
 # =====================================
 
 def format_duration(duration: float) -> str:
     """
-    格式化时间显示
+    Format time display
     
     Args:
-    duration: 持续时间（秒）
+    duration: Duration in seconds
     
     Returns:
-    str: 格式化的时间字符串
+    str: Formatted time string
     """
     hours, remainder = divmod(duration, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
 
-# 注：save_batch_info 函数已被 ExperimentDataManager 的批次元数据功能替代
+# Note: save_batch_info function has been replaced by ExperimentDataManager's batch metadata functionality
 
 
 # =====================================
-# 并行计算支持函数
+# Parallel computing support functions
 # =====================================
 
 def run_single_simulation_task(task_params):
     """
-    单个模拟任务的包装函数，用于多进程并行计算
+    Wrapper function for single simulation task, used for multi-process parallel computation
     
     Args:
-        task_params: 包含任务参数的元组
+        task_params: Tuple containing task parameters
             (plot_type, combination, x_val, run_idx, steps, process_id, batch_seed)
     
     Returns:
@@ -235,20 +235,20 @@ def run_single_simulation_task(task_params):
     try:
         plot_type, combination, x_val, run_idx, steps, process_id, batch_seed = task_params
         
-        # 设置进程特定的随机种子，加入批次标识确保不同批次产生不同结果
+        # Set process-specific random seed, add batch identifier to ensure different batches produce different results
         np.random.seed((int(x_val * 1000) + run_idx + process_id + batch_seed) % (2**32))
         
-        # 构建配置
+        # Build configuration
         base_config = copy.deepcopy(high_polarization_config)
         
-        # 设置固定参数
+        # Set fixed parameters
         if plot_type == 'zealot_numbers':
             base_config.morality_rate = combination['morality_rate']
             base_config.zealot_identity_allocation = combination['zealot_identity_allocation']
             base_config.cluster_identity = combination['cluster_identity']
             base_config.enable_zealots = True
             base_config.steps = combination['steps']
-            # 设置当前x值对应的参数
+            # Set parameters corresponding to current x value
             base_config.zealot_count = int(x_val)
             base_config.zealot_mode = combination['zealot_mode']
             if x_val == 0:
@@ -260,10 +260,10 @@ def run_single_simulation_task(task_params):
             base_config.cluster_identity = combination['cluster_identity']
             base_config.enable_zealots = combination['zealot_mode'] != 'none'
             base_config.steps = combination['steps']
-            # 设置当前x值对应的参数
-            base_config.morality_rate = x_val / 100.0  # 转换为0-1范围
+            # Set parameters corresponding to current x value
+            base_config.morality_rate = x_val / 100.0  # Convert to 0-1 range
         
-        # 运行单次模拟
+        # Run single simulation
         results = run_single_simulation(base_config, steps)
         
         return (x_val, run_idx, results, True, None)
@@ -274,91 +274,91 @@ def run_single_simulation_task(task_params):
 
 
 # =====================================
-# 核心实验逻辑函数
+# Core experiment logic functions
 # =====================================
 
 def create_config_combinations():
     """
-    创建实验参数组合配置
+    Create experimental parameter combination configurations
     
-    该函数生成两类实验的所有参数组合：
+    This function generates all parameter combinations for two types of experiments:
     
-    1. zealot_numbers实验：测试不同zealot数量对系统的影响
-       - 变量：zealot数量 (x轴)
-       - 固定：zealot身份分配=True, 身份分布=random
-       - 比较：zealot分布模式(random/clustered) × morality比例(0.0/0.3) = 4个组合
+    1. zealot_numbers experiment: Test the impact of different zealot numbers on the system
+       - Variable: zealot count (x-axis)
+       - Fixed: zealot identity allocation=True, identity distribution=random
+       - Compare: zealot distribution modes (random/clustered) × morality ratios (0.0/0.3) = 4 combinations
     
-    2. morality_ratios实验：测试不同morality比例对系统的影响
-       - 变量：morality比例 (x轴)
-       - 固定：zealot数量=20
-       - 比较：zealot模式(random/clustered/none) × zealot身份对齐(True/False) × 
-               身份分布(random/clustered) = 10个组合
+    2. morality_ratios experiment: Test the impact of different morality ratios on the system
+       - Variable: morality ratio (x-axis)
+       - Fixed: zealot count=20
+       - Compare: zealot modes (random/clustered/none) × zealot identity alignment (True/False) × 
+                 identity distribution (random/clustered) = 10 combinations
     
     Returns:
-        dict: 包含两类实验配置的字典
-            - 'zealot_numbers': 4个参数组合，用于zealot数量实验
-            - 'morality_ratios': 10个参数组合，用于morality比例实验
+        dict: Dictionary containing configurations for both experiment types
+            - 'zealot_numbers': 4 parameter combinations for zealot count experiments
+            - 'morality_ratios': 10 parameter combinations for morality ratio experiments
     """
-    # 基础配置：使用高极化配置作为模板
+    # Base configuration: use high polarization config as template
     base_config = copy.deepcopy(high_polarization_config)
-    base_config.steps = 300  # 每次模拟运行300步
+    base_config.steps = 300  # Each simulation runs 300 steps
     
-    # 初始化两类实验的参数组合容器
+    # Initialize parameter combination containers for both experiment types
     combinations = {
-        'zealot_numbers': [],   # 实验1：x轴为zealot数量的参数组合
-        'morality_ratios': []   # 实验2：x轴为morality比例的参数组合
+        'zealot_numbers': [],   # Experiment 1: parameter combinations with zealot count on x-axis
+        'morality_ratios': []   # Experiment 2: parameter combinations with morality ratio on x-axis
     }
     
-    # ===== 实验1：zealot数量扫描实验 =====
-    # 比较zealot分布模式和morality比例对系统的影响
-    # 固定参数：zealot身份分配=True, 身份分布=random
-    zealot_clustering_options = ['random', 'clustered']  # zealot分布模式：随机分布 vs 聚集分布
-    morality_ratios_for_zealot_plot = [0.0, 0.3]  # 两个morality水平：无道德约束 vs 中等道德约束
+    # ===== Experiment 1: Zealot count sweep experiment =====
+    # Compare the impact of zealot distribution modes and morality ratios on the system
+    # Fixed parameters: zealot identity allocation=True, identity distribution=random
+    zealot_clustering_options = ['random', 'clustered']  # Zealot distribution modes: random distribution vs clustered distribution
+    morality_ratios_for_zealot_plot = [0.0, 0.3]  # Two morality levels: no moral constraint vs moderate moral constraint
     
     for clustering in zealot_clustering_options:
         for morality_ratio in morality_ratios_for_zealot_plot:
             combo = {
-                'zealot_mode': clustering,                    # zealot分布模式
-                'morality_rate': morality_ratio,              # morality约束强度
-                'zealot_identity_allocation': True,           # zealot按身份分配（固定）
-                'cluster_identity': False,                    # 身份随机分布（固定）
+                'zealot_mode': clustering,                    # Zealot distribution mode
+                'morality_rate': morality_ratio,              # Morality constraint strength
+                'zealot_identity_allocation': True,           # Zealot allocation by identity (fixed)
+                'cluster_identity': False,                    # Random identity distribution (fixed)
                 'label': f'{clustering.capitalize()} Zealots, Morality={morality_ratio}',
                 'steps': base_config.steps
             }
             combinations['zealot_numbers'].append(combo)
     
-    # ===== 实验2：morality比例扫描实验 =====
-    # 比较三个关键因素的交互影响：zealot分布、zealot身份对齐、身份分布
-    # 固定参数：zealot数量=20（中等水平）
-    zealot_modes = ['random', 'clustered', 'none']     # zealot模式：随机/聚集/无zealot
-    zealot_identity_alignments = [True, False]         # zealot是否按身份分配
-    identity_distributions = [False, True]             # 身份分布：随机 vs 聚集
+    # ===== Experiment 2: Morality ratio sweep experiment =====
+    # Compare interactive effects of three key factors: zealot distribution, zealot identity alignment, identity distribution
+    # Fixed parameters: zealot count=20 (moderate level)
+    zealot_modes = ['random', 'clustered', 'none']     # Zealot modes: random/clustered/no zealots
+    zealot_identity_alignments = [True, False]         # Whether zealots are allocated by identity
+    identity_distributions = [False, True]             # Identity distribution: random vs clustered
     
-    # 固定zealot数量为20，这是一个中等水平，既不会过度影响系统，也能观察到效果
+    # Fix zealot count to 20, which is a moderate level that won't overly impact the system while still allowing observable effects
     fixed_zealot_count = 20
     
     for zealot_mode in zealot_modes:
         if zealot_mode == 'none':
-            # 无zealot情况：只需要区分身份分布方式，zealot相关参数无意义
+            # No zealot case: only need to distinguish identity distribution methods, zealot-related parameters are meaningless
             for identity_dist in identity_distributions:
                 combo = {
-                    'zealot_count': 0,                           # 无zealot
-                    'zealot_mode': zealot_mode,                  # 标记为'none'
-                    'zealot_identity_allocation': True,          # 默认值（不影响结果）
-                    'cluster_identity': identity_dist,           # 身份分布方式
+                    'zealot_count': 0,                           # No zealots
+                    'zealot_mode': zealot_mode,                  # Marked as 'none'
+                    'zealot_identity_allocation': True,          # Default value (doesn't affect results)
+                    'cluster_identity': identity_dist,           # Identity distribution method
                     'label': f'{zealot_mode.capitalize()}, ID-cluster={identity_dist}',
                     'steps': base_config.steps
                 }
                 combinations['morality_ratios'].append(combo)
         else:
-            # 有zealot情况：需要考虑zealot身份对齐方式和身份分布方式的组合效应
+            # With zealots case: need to consider the combined effects of zealot identity alignment and identity distribution methods
             for zealot_identity in zealot_identity_alignments:
                 for identity_dist in identity_distributions:
                     combo = {
-                        'zealot_count': fixed_zealot_count,          # 固定zealot数量
-                        'zealot_mode': zealot_mode,                  # zealot分布模式
-                        'zealot_identity_allocation': zealot_identity,  # zealot身份对齐方式
-                        'cluster_identity': identity_dist,           # 身份分布方式
+                        'zealot_count': fixed_zealot_count,          # Fixed zealot count
+                        'zealot_mode': zealot_mode,                  # Zealot distribution mode
+                        'zealot_identity_allocation': zealot_identity,  # Zealot identity alignment method
+                        'cluster_identity': identity_dist,           # Identity distribution method
                         'label': f'{zealot_mode.capitalize()} Zealots, ID-align={zealot_identity}, ID-cluster={identity_dist}',
                         'steps': base_config.steps
                     }
@@ -369,59 +369,59 @@ def create_config_combinations():
 
 def run_single_simulation(config: SimulationConfig, steps: int = 500) -> Dict[str, float]:
     """
-    运行单次模拟并获取最终状态的统计指标
+    Run a single simulation and obtain statistical metrics from the final state
     
-    该函数创建一个模拟实例，运行指定步数，然后计算六个关键指标：
-    - Mean Opinion: 系统中非zealot agent的平均意见值
-    - Variance: 意见分布的方差，衡量意见分化程度
-    - Identity Opinion Difference: 不同身份群体间的平均意见差异
-    - Polarization Index: 极化指数，衡量系统的极化程度
-    - Variance per Identity: 每个身份群体内部的意见方差（两个身份群体分别计算）
+    This function creates a simulation instance, runs it for specified steps, then calculates six key metrics:
+    - Mean Opinion: Average opinion value of non-zealot agents in the system
+    - Variance: Variance of opinion distribution, measuring opinion divergence
+    - Identity Opinion Difference: Average opinion difference between different identity groups
+    - Polarization Index: Polarization index, measuring system polarization level
+    - Variance per Identity: Opinion variance within each identity group (calculated separately for both identity groups)
     
     Args:
-        config (SimulationConfig): 模拟配置对象，包含网络、agent、zealot等参数
-        steps (int, optional): 模拟运行的步数. Defaults to 500.
+        config (SimulationConfig): Simulation configuration object containing network, agent, zealot and other parameters
+        steps (int, optional): Number of steps to run the simulation. Defaults to 500.
     
     Returns:
-        Dict[str, Any]: 包含统计指标的字典
-            - 'mean_opinion': 平均意见值 (float)
-            - 'variance': 意见方差 (float)
-            - 'identity_opinion_difference': 身份间意见差异 (float)
-            - 'polarization_index': 极化指数 (float)
-            - 'variance_per_identity': 每个身份组的方差 (dict)
-                - 'identity_1': identity=1组的方差
-                - 'identity_-1': identity=-1组的方差
+        Dict[str, Any]: Dictionary containing statistical metrics
+            - 'mean_opinion': Average opinion value (float)
+            - 'variance': Opinion variance (float)
+            - 'identity_opinion_difference': Identity opinion difference (float)
+            - 'polarization_index': Polarization index (float)
+            - 'variance_per_identity': Variance for each identity group (dict)
+                - 'identity_1': Variance for identity=1 group
+                - 'identity_-1': Variance for identity=-1 group
     
     Raises:
-        Exception: 当模拟过程中出现错误时抛出异常
+        Exception: Raises exception when errors occur during simulation
     """
-    # 创建模拟实例
+    # Create simulation instance
     sim = Simulation(config)
     
-    # 逐步运行模拟至稳定状态
+    # Run simulation step by step to stable state
     for _ in range(steps):
         sim.step()
     
-    # 从最终状态计算各项统计指标
+    # Calculate various statistical metrics from final state
     mean_stats = calculate_mean_opinion(sim, exclude_zealots=True)
     variance_stats = calculate_variance_metrics(sim, exclude_zealots=True)
     identity_stats = calculate_identity_statistics(sim, exclude_zealots=True)
     polarization = get_polarization_index(sim)
     
-    # 计算identity opinion difference (身份间意见差异)
+    # Calculate identity opinion difference (opinion difference between identities)
     identity_opinion_difference = 0.0
     if 'identity_difference' in identity_stats:
         identity_opinion_difference = identity_stats['identity_difference']['abs_mean_opinion_difference']
     else:
-        # 理论上在正常情况下不应该到达这里（zealot数量足够小时）
+        # Theoretically should not reach here under normal conditions (when zealot count is small enough)
         print("Warning: identity_difference not found, this should not happen under normal conditions")
         identity_opinion_difference = 0.0
     
-    # 计算 variance per identity (每个身份组内的方差)
+    # Calculate variance per identity (variance within each identity group)
     variance_per_identity = {'identity_1': 0.0, 'identity_-1': 0.0}
     
-    # 获取非zealot节点的意见和身份
-    # 创建 zealot mask：如果一个agent的ID在 zealot_ids 中，则为True
+    # Get opinions and identities of non-zealot nodes
+    # Create zealot mask: if an agent's ID is in zealot_ids, then True
     zealot_mask = np.zeros(sim.num_agents, dtype=bool)
     if sim.enable_zealots and sim.zealot_ids:
         zealot_mask[sim.zealot_ids] = True
@@ -430,10 +430,10 @@ def run_single_simulation(config: SimulationConfig, steps: int = 500) -> Dict[st
     non_zealot_opinions = sim.opinions[non_zealot_mask]
     non_zealot_identities = sim.identities[non_zealot_mask]
     
-    # 分别计算每个身份组的方差
+    # Calculate variance for each identity group separately
     for identity_val in [1, -1]:
         identity_mask = non_zealot_identities == identity_val
-        if np.sum(identity_mask) > 1:  # 至少需要2个节点才能计算方差
+        if np.sum(identity_mask) > 1:  # Need at least 2 nodes to calculate variance
             identity_opinions = non_zealot_opinions[identity_mask]
             variance_per_identity[f'identity_{identity_val}'] = float(np.var(identity_opinions))
         else:
@@ -452,43 +452,43 @@ def run_parameter_sweep(plot_type: str, combination: Dict[str, Any],
                        x_values: List[float], num_runs: int = 5, num_processes: int = 1, 
                        batch_seed: int = 0) -> Dict[str, List[List[float]]]:
     """
-    对特定参数组合进行参数扫描实验
+    Perform parameter sweep experiment on specific parameter combination
     
-    该函数针对给定的参数组合，在x轴的每个取值点运行多次模拟，收集统计数据。
-    这是实验的核心执行函数，支持两种类型的扫描：
-    - zealot_numbers: 固定morality比例，扫描不同的zealot数量
-    - morality_ratios: 固定zealot数量，扫描不同的morality比例
+    This function runs multiple simulations at each x-axis value point for a given parameter combination to collect statistical data.
+    This is the core execution function of the experiment, supporting two types of sweeps:
+    - zealot_numbers: Fix morality ratio, sweep different zealot counts
+    - morality_ratios: Fix zealot count, sweep different morality ratios
     
     Args:
-        plot_type (str): 实验类型
-            - 'zealot_numbers': x轴为zealot数量的实验
-            - 'morality_ratios': x轴为morality比例的实验
-        combination (Dict[str, Any]): 参数组合字典，包含：
-            - zealot_mode: zealot分布模式 ('random', 'clustered', 'none')
-            - morality_rate: morality比例 (0.0-1.0)
-            - zealot_identity_allocation: 是否按身份分配zealot
-            - cluster_identity: 是否聚类身份分布
-            - label: 组合标签
-            - steps: 模拟步数
-        x_values (List[float]): x轴扫描的取值列表，如 [0, 1, 2, ...]
-        num_runs (int, optional): 每个x值点重复运行次数. Defaults to 5.
-        num_processes (int, optional): 并行进程数，1表示串行执行. Defaults to 1.
-        batch_seed (int, optional): 批次种子，确保不同批次产生不同结果. Defaults to 0.
+        plot_type (str): Experiment type
+            - 'zealot_numbers': Experiment with zealot count on x-axis
+            - 'morality_ratios': Experiment with morality ratio on x-axis
+        combination (Dict[str, Any]): Parameter combination dictionary containing:
+            - zealot_mode: Zealot distribution mode ('random', 'clustered', 'none')
+            - morality_rate: Morality ratio (0.0-1.0)
+            - zealot_identity_allocation: Whether to allocate zealots by identity
+            - cluster_identity: Whether to cluster identity distribution
+            - label: Combination label
+            - steps: Number of simulation steps
+        x_values (List[float]): List of x-axis sweep values, e.g. [0, 1, 2, ...]
+        num_runs (int, optional): Number of repeated runs per x value point. Defaults to 5.
+        num_processes (int, optional): Number of parallel processes, 1 means serial execution. Defaults to 1.
+        batch_seed (int, optional): Batch seed to ensure different batches produce different results. Defaults to 0.
     
     Returns:
-        Dict[str, List[List[float]]]: 嵌套的结果数据结构
-            格式: {metric_name: [x1_runs, x2_runs, ...]}
-            其中 x1_runs = [run1_value, run2_value, ...]
+        Dict[str, List[List[float]]]: Nested result data structure
+            Format: {metric_name: [x1_runs, x2_runs, ...]}
+            where x1_runs = [run1_value, run2_value, ...]
             
-            包含的指标:
-            - 'mean_opinion': 平均意见值的多次运行结果
-            - 'variance': 意见方差的多次运行结果  
-            - 'identity_opinion_difference': 身份间意见差异的多次运行结果
-            - 'polarization_index': 极化指数的多次运行结果
-            - 'variance_per_identity_1': identity=1组内方差的多次运行结果
-            - 'variance_per_identity_-1': identity=-1组内方差的多次运行结果
+            Included metrics:
+            - 'mean_opinion': Multiple run results for average opinion values
+            - 'variance': Multiple run results for opinion variance
+            - 'identity_opinion_difference': Multiple run results for identity opinion differences
+            - 'polarization_index': Multiple run results for polarization index
+            - 'variance_per_identity_1': Multiple run results for within-group variance of identity=1
+            - 'variance_per_identity_-1': Multiple run results for within-group variance of identity=-1
     """
-    # 选择串行或并行执行
+    # Choose serial or parallel execution
     if num_processes == 1:
         return run_parameter_sweep_serial(plot_type, combination, x_values, num_runs, batch_seed)
     else:
@@ -498,7 +498,7 @@ def run_parameter_sweep(plot_type: str, combination: Dict[str, Any],
 def run_parameter_sweep_serial(plot_type: str, combination: Dict[str, Any], 
                               x_values: List[float], num_runs: int = 5, batch_seed: int = 0) -> Dict[str, List[List[float]]]:
     """
-    串行版本的参数扫描（原有逻辑）
+    Serial version of parameter sweep (original logic)
     """
     results = {
         'mean_opinion': [],
@@ -511,7 +511,7 @@ def run_parameter_sweep_serial(plot_type: str, combination: Dict[str, Any],
     
     base_config = copy.deepcopy(high_polarization_config)
     
-    # 设置固定参数
+    # Set fixed parameters
     if plot_type == 'zealot_numbers':
         base_config.morality_rate = combination['morality_rate']
         base_config.zealot_identity_allocation = combination['zealot_identity_allocation']
@@ -526,7 +526,7 @@ def run_parameter_sweep_serial(plot_type: str, combination: Dict[str, Any],
         base_config.enable_zealots = combination['zealot_mode'] != 'none'
         base_config.steps = combination['steps']
     
-    # 对每个x值进行多次运行
+    # Run multiple times for each x value
     for x_val in tqdm(x_values, desc=f"Running {combination['label']}"):
         runs_data = {
             'mean_opinion': [],
@@ -537,7 +537,7 @@ def run_parameter_sweep_serial(plot_type: str, combination: Dict[str, Any],
             'variance_per_identity_-1': []
         }
         
-        # 设置当前x值对应的参数
+        # Set parameters for the current x value
         current_config = copy.deepcopy(base_config)
         if plot_type == 'zealot_numbers':
             current_config.zealot_count = int(x_val)
@@ -545,29 +545,29 @@ def run_parameter_sweep_serial(plot_type: str, combination: Dict[str, Any],
             if x_val == 0:
                 current_config.enable_zealots = False
         else:  # morality_ratios
-            current_config.morality_rate = x_val / 100.0  # 转换为0-1范围
+            current_config.morality_rate = x_val / 100.0  # Convert to 0-1 range
         
-        # 运行多次模拟
+        # Run multiple simulations
         for run in range(num_runs):
             try:
-                # 设置随机种子，加入批次标识确保不同批次产生不同结果
+                # Set random seed, add batch identifier to ensure different batches produce different results
                 np.random.seed((int(x_val * 1000) + run + batch_seed) % (2**32))
                 
                 stats = run_single_simulation(current_config)
-                # 处理基础指标
+                # Process basic metrics
                 for metric in ['mean_opinion', 'variance', 'identity_opinion_difference', 'polarization_index']:
                     runs_data[metric].append(stats[metric])
-                # 处理 variance per identity 指标
+                # Process variance per identity metric
                 variance_per_identity = stats['variance_per_identity']
                 runs_data['variance_per_identity_1'].append(variance_per_identity['identity_1'])
                 runs_data['variance_per_identity_-1'].append(variance_per_identity['identity_-1'])
             except Exception as e:
                 print(f"Warning: Simulation failed for x={x_val}, run={run}: {e}")
-                # 使用NaN填充失败的运行
+                # Fill failed runs with NaN
                 for metric in runs_data.keys():
                     runs_data[metric].append(np.nan)
         
-        # 将当前x值的所有运行结果添加到总结果中
+        # Add all run results for current x value to total results
         for metric in results.keys():
             results[metric].append(runs_data[metric])
     
@@ -578,42 +578,42 @@ def run_parameter_sweep_parallel(plot_type: str, combination: Dict[str, Any],
                                 x_values: List[float], num_runs: int = 5, num_processes: int = 4, 
                                 batch_seed: int = 0) -> Dict[str, List[List[float]]]:
     """
-    并行版本的参数扫描
+    Parallel version of parameter sweep
     """
-    print(f"🚀 使用 {num_processes} 个进程进行并行计算...")
+    print(f"Using {num_processes} processes for parallel computation...")
     
-    # 创建所有任务
+    # Create all tasks
     tasks = []
     for x_val in x_values:
         for run_idx in range(num_runs):
-            process_id = len(tasks) % num_processes  # 简单的进程ID分配
+            process_id = len(tasks) % num_processes  # Simple process ID allocation
             task = (plot_type, combination, x_val, run_idx, combination['steps'], process_id, batch_seed)
             tasks.append(task)
     
-    print(f"📊 总任务数: {len(tasks)} (x_values: {len(x_values)}, runs_per_x: {num_runs})")
+    print(f"Total tasks: {len(tasks)} (x_values: {len(x_values)}, runs_per_x: {num_runs})")
     
-    # 执行并行计算
+    # Execute parallel computation
     try:
         with multiprocessing.Pool(num_processes) as pool:
-            # 使用 imap 来显示进度
+            # Use imap to show progress
             results_list = []
             with tqdm(total=len(tasks), desc=f"Running {combination['label']} (parallel)") as pbar:
                 for result in pool.imap(run_single_simulation_task, tasks):
                     results_list.append(result)
                     pbar.update(1)
     except Exception as e:
-        print(f"❌ 并行计算失败，回退到串行模式: {e}")
+        print(f"Parallel computation failed, falling back to serial mode: {e}")
         return run_parameter_sweep_serial(plot_type, combination, x_values, num_runs, batch_seed)
     
-    # 整理结果
+    # Organize results
     return organize_parallel_results(results_list, x_values, num_runs)
 
 
 def organize_parallel_results(results_list: List[Tuple], x_values: List[float], num_runs: int) -> Dict[str, List[List[float]]]:
     """
-    将并行计算结果重新组织为原有的数据结构
+    Reorganize parallel computation results into original data structure
     """
-    # 初始化结果结构
+    # Initialize result structure
     organized_results = {
         'mean_opinion': [],
         'variance': [],
@@ -623,11 +623,11 @@ def organize_parallel_results(results_list: List[Tuple], x_values: List[float], 
         'variance_per_identity_-1': []
     }
     
-    # 统计成功和失败的任务
+    # Count successful and failed tasks
     success_count = 0
     failure_count = 0
     
-    # 按 x_value 分组整理结果
+    # Group and organize results by x_value
     for x_val in x_values:
         runs_data = {
             'mean_opinion': [],
@@ -638,9 +638,9 @@ def organize_parallel_results(results_list: List[Tuple], x_values: List[float], 
             'variance_per_identity_-1': []
         }
         
-        # 收集当前 x_val 的所有运行结果
+        # Collect all run results for current x_val
         for run_idx in range(num_runs):
-            # 在结果列表中查找对应的结果
+            # Find corresponding results in result list
             found_result = None
             for result in results_list:
                 result_x_val, result_run_idx, result_data, success, error_msg = result
@@ -650,37 +650,37 @@ def organize_parallel_results(results_list: List[Tuple], x_values: List[float], 
             
             if found_result and found_result[3]:  # success = True
                 result_data = found_result[2]
-                # 处理基础指标
+                # Process basic metrics
                 for metric in ['mean_opinion', 'variance', 'identity_opinion_difference', 'polarization_index']:
                     runs_data[metric].append(result_data[metric])
-                # 处理 variance per identity 指标
+                # Process variance per identity metric
                 variance_per_identity = result_data['variance_per_identity']
                 runs_data['variance_per_identity_1'].append(variance_per_identity['identity_1'])
                 runs_data['variance_per_identity_-1'].append(variance_per_identity['identity_-1'])
                 success_count += 1
             else:
-                # 处理失败的任务
+                # Handle failed tasks
                 if found_result:
-                    print(f"⚠️  {found_result[4]}")  # 打印错误信息
+                    print(f"Warning: {found_result[4]}")  # Print error message
                 else:
-                    print(f"⚠️  Missing result for x={x_val}, run={run_idx}")
+                    print(f"Warning: Missing result for x={x_val}, run={run_idx}")
                 
-                # 使用NaN填充失败的运行
+                # Fill failed runs with NaN
                 for metric in runs_data.keys():
                     runs_data[metric].append(np.nan)
                 failure_count += 1
         
-        # 将当前x值的所有运行结果添加到总结果中
+        # Add all run results for current x value to total results
         for metric in organized_results.keys():
             organized_results[metric].append(runs_data[metric])
     
-    print(f"✅ 并行计算完成: {success_count} 成功, {failure_count} 失败")
+    print(f"Parallel computation completed: {success_count} successful, {failure_count} failed")
     
     return organized_results
 
 
 # =====================================
-# 数据管理函数 (已重构为使用 ExperimentDataManager)
+# Data management functions (refactored to use ExperimentDataManager)
 # =====================================
 
 def save_data_with_manager(data_manager: ExperimentDataManager, 
@@ -689,16 +689,16 @@ def save_data_with_manager(data_manager: ExperimentDataManager,
                           all_results: Dict[str, Dict[str, List[List[float]]]], 
                           batch_metadata: Dict[str, Any]) -> None:
     """
-    使用新的数据管理器保存实验数据
+    Save experiment data using the new data manager
     
     Args:
-        data_manager: 数据管理器实例
-        plot_type: 'zealot_numbers' 或 'morality_ratios'
-        x_values: x轴取值
-        all_results: 所有组合的结果数据
-        batch_metadata: 批次元数据
+        data_manager: Data manager instance
+        plot_type: 'zealot_numbers' or 'morality_ratios'
+        x_values: x-axis values
+        all_results: Result data from all combinations
+        batch_metadata: Batch metadata
     """
-    # 转换数据格式以适配新的数据管理器
+    # Convert data format to adapt to new data manager
     batch_data = {}
     
     for combination_label, results in all_results.items():
@@ -707,80 +707,80 @@ def save_data_with_manager(data_manager: ExperimentDataManager,
             'results': results
         }
     
-    # 使用数据管理器保存数据
+    # Save data using data manager
     data_manager.save_batch_results(plot_type, batch_data, batch_metadata)
 
 
 # =====================================
-# 绘图相关函数
+# Plotting related functions
 # =====================================
 
 def get_enhanced_style_config(combo_labels: List[str], plot_type: str) -> Dict[str, Dict[str, Any]]:
     """
-    为组合标签生成增强的样式配置，特别针对morality_ratios的10条线进行优化
+    Generate enhanced style configurations for combo labels, especially optimized for the 10 lines in morality_ratios
     
     Args:
-    combo_labels: 组合标签列表
-    plot_type: 图表类型 ('zealot_numbers' 或 'morality_ratios')
+    combo_labels: List of combination labels
+    plot_type: Chart type ('zealot_numbers' or 'morality_ratios')
     
     Returns:
-    dict: 样式配置字典
+    dict: Style configuration dictionary
     """
-    # 定义扩展的颜色调色板
+    # Define an extended color palette
     colors = [
-        '#1f77b4',  # 蓝色
-        '#ff7f0e',  # 橙色  
-        '#2ca02c',  # 绿色
-        '#d62728',  # 红色
-        '#9467bd',  # 紫色
-        '#8c564b',  # 棕色
-        '#e377c2',  # 粉色
-        '#7f7f7f',  # 灰色
-        '#bcbd22',  # 橄榄色
-        '#17becf',  # 青色
-        '#aec7e8',  # 浅蓝色
-        '#ffbb78'   # 浅橙色
+        '#1f77b4',  # blue
+        '#ff7f0e',  # orange  
+        '#2ca02c',  # green
+        '#d62728',  # red
+        '#9467bd',  # purple
+        '#8c564b',  # brown
+        '#e377c2',  # pink
+        '#7f7f7f',  # gray
+        '#bcbd22',  # olive
+        '#17becf',  # cyan
+        '#aec7e8',  # light blue
+        '#ffbb78'   # light orange
     ]
     
-    # 定义多种线型
+    # Define multiple line styles
     linestyles = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 5)), (0, (3, 3)), (0, (1, 1))]
     
-    # 定义多种标记
+    # Define multiple markers
     markers = ['o', 's', '^', 'v', 'D', 'p', '*', 'h', 'H', 'X', '+', 'x']
     
     style_config = {}
     
     if plot_type == 'morality_ratios':
-        # 定义颜色映射：按zealot模式和ID-align分组
+        # Define color mapping: group by zealot mode and ID-align
         zealot_mode_colors = {
             'None': {
-                'base': '#505050',      # 深灰色 (ID-cluster=True)
-                'light': '#c0c0c0'      # 浅灰色 (ID-cluster=False)
+                'base': '#505050',      # dark gray (ID-cluster=True)
+                'light': '#c0c0c0'      # light gray (ID-cluster=False)
             },
             'Random': {
-                'base': '#ff4500',      # 深橙红色 (ID-align=True)
-                'light': '#ff8080'      # 浅粉红色 (ID-align=False)  
+                'base': '#ff4500',      # deep orange-red (ID-align=True)
+                'light': '#ff8080'      # light pink (ID-align=False)  
             },
             'Clustered': {
-                'base': '#0066cc',      # 深蓝色 (ID-align=True)
-                'light': '#00cc66'      # 亮绿色 (ID-align=False)
+                'base': '#0066cc',      # dark blue (ID-align=True)
+                'light': '#00cc66'      # bright green (ID-align=False)
             }
         }
         
-        # 定义标记映射：按ID-cluster分组
+        # Define marker mapping: group by ID-cluster
         id_cluster_markers = {
-            'True': 'o',      # 圆形表示ID-cluster=True
-            'False': '^'      # 三角形表示ID-cluster=False
+            'True': 'o',      # circle for ID-cluster=True
+            'False': '^'      # triangle for ID-cluster=False
         }
         
-        # 定义标记大小映射：按ID-align分组
+        # Define marker size mapping: group by ID-align
         id_align_sizes = {
-            'True': 10,        # 大标记表示ID-align=True
-            'False': 5         # 小标记表示ID-align=False
+            'True': 10,        # large marker for ID-align=True
+            'False': 5         # small marker for ID-align=False
         }
         
         for label in combo_labels:
-            # 解析标签中的配置信息
+            # Parse configuration information from the label
             if 'None' in label:
                 zealot_mode = 'None'
                 if 'ID-cluster=True' in label:
@@ -836,7 +836,7 @@ def get_enhanced_style_config(combo_labels: List[str], plot_type: str) -> Dict[s
                     'group': 'Clustered'
                 }
     else:
-        # 对于zealot_numbers，使用简单配置
+        # For zealot_numbers, use a simple configuration
         for i, label in enumerate(combo_labels):
             style_config[label] = {
                 'color': colors[i % len(colors)],
@@ -846,30 +846,30 @@ def get_enhanced_style_config(combo_labels: List[str], plot_type: str) -> Dict[s
                 'group': 'Default'
             }
     
-    # 为 variance_per_identity 指标添加带身份后缀的样式条目
-    # 复制每个基础样式，添加 (ID=1) 和 (ID=-1) 后缀的变体
+    # Add style entries with identity suffixes for variance_per_identity metric
+    # Copy each base style and add variants with (ID=1) and (ID=-1) suffixes
     variance_style_additions = {}
     for label, base_style in style_config.items():
-        # 为 ID=1 创建样式（实线 + 圆形标记）
+        # Create style for ID=1 (solid line + circle marker)
         id1_style = base_style.copy()
         id1_style['linestyle'] = '-'
         # id1_style['marker'] = 'o'
         variance_style_additions[f"{label} (ID=1)"] = id1_style
         
-        # 为 ID=-1 创建样式（虚线 + 方形标记，稍小的标记）
+        # Create style for ID=-1 (dashed line + square marker, slightly smaller)
         id_neg1_style = base_style.copy()
         id_neg1_style['linestyle'] = '--'
         # id_neg1_style['marker'] = 's'
         # id_neg1_style['markersize'] = max(6, base_style.get('markersize', 10) - 2)
         variance_style_additions[f"{label} (ID=-1)"] = id_neg1_style
         
-        # 为 variance_per_identity_combined 添加带加号的变体
-        # 为 ID=+1 创建样式（实线）
+        # Add variants with plus sign for variance_per_identity_combined
+        # Create style for ID=+1 (solid line)
         id_plus1_style = base_style.copy()
         id_plus1_style['linestyle'] = '-'
         variance_style_additions[f"{label} (ID=+1)"] = id_plus1_style
     
-    # 将新的样式条目添加到原始 style_config 中
+    # Add the new style entries to the original style_config
     style_config.update(variance_style_additions)
     
     return style_config
@@ -877,16 +877,16 @@ def get_enhanced_style_config(combo_labels: List[str], plot_type: str) -> Dict[s
 
 def get_variance_per_identity_style(identity_label: str, plot_type: str) -> Dict[str, Any]:
     """
-    为 variance per identity 图表生成特殊的样式配置
+    Generate special style configuration for variance per identity plots
     
     Args:
-        identity_label: 带身份标识的标签，如 "Random, ID-align=True (ID=1)"
-        plot_type: 图表类型
+        identity_label: Label with identity identifier, e.g., "Random, ID-align=True (ID=1)"
+        plot_type: Chart type
     
     Returns:
-        dict: 样式配置
+        dict: Style configuration
     """
-    # 扩展颜色调色板（去重并确保足够的颜色）
+    # Extended color palette (deduplicated and ensuring enough colors)
     colors = [
         '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
         '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#aec7e8', '#ffbb78',
@@ -895,9 +895,9 @@ def get_variance_per_identity_style(identity_label: str, plot_type: str) -> Dict
         '#00bcd4', '#795548', '#607d8b', '#e91e63', '#4caf50', '#ffc107'
     ]
     
-    # 预定义的标签到颜色索引的映射（避免哈希冲突）
+    # Predefined mapping of labels to color indices (to avoid hash collisions)
     label_color_mapping = {
-        # morality_ratios 实验的10个基础标签
+        # 10 base labels for morality_ratios experiment
         'Random Zealots, ID-align=True, ID-cluster=False': 0,
         'Random Zealots, ID-align=True, ID-cluster=True': 1,
         'Random Zealots, ID-align=False, ID-cluster=False': 2,
@@ -908,41 +908,41 @@ def get_variance_per_identity_style(identity_label: str, plot_type: str) -> Dict
         'Clustered Zealots, ID-align=False, ID-cluster=True': 7,
         'None, ID-cluster=False': 8,
         'None, ID-cluster=True': 9,
-        # zealot_numbers 实验的4个基础标签
+        # 4 base labels for zealot_numbers experiment
         'Random Zealots, Morality=0.0': 10,
         'Random Zealots, Morality=0.3': 11,
         'Clustered Zealots, Morality=0.0': 12,
         'Clustered Zealots, Morality=0.3': 13,
     }
     
-    # 线型组合：实线用于 ID=1，虚线用于 ID=-1
+    # Line style combination: solid for ID=1, dashed for ID=-1
     linestyles = {
-        '1': '-',      # 实线用于 identity=1
-        '-1': '--'     # 虚线用于 identity=-1
+        '1': '-',      # solid line for identity=1
+        '-1': '--'     # dashed line for identity=-1
     }
     
-    # 标记形状：圆形用于 ID=1，方形用于 ID=-1
+    # Marker shapes: circle for ID=1, square for ID=-1
     markers = {
-        '1': 'o',      # 圆形用于 identity=1
-        '-1': 's'      # 方形用于 identity=-1
+        '1': 'o',      # circle for identity=1
+        '-1': 's'      # square for identity=-1
     }
     
-    # 提取身份值
+    # Extract identity value
     identity_val = identity_label.split('(ID=')[-1].rstrip(')')
     
-    # 提取原始组合标签
+    # Extract original combination label
     base_label = identity_label.split(' (ID=')[0]
     
-    # 使用预定义的映射或回退到哈希方法
+    # Use predefined mapping or fall back to hash method
     if base_label in label_color_mapping:
         base_color_index = label_color_mapping[base_label]
     else:
-        # 回退到哈希方法（用于未预定义的标签）
+        # Fall back to hash method (for undefined labels)
         base_color_index = abs(hash(base_label)) % len(colors)
     
-    # 为ID=-1组选择不同的颜色（确保无冲突）
+    # Select a different color for the ID=-1 group (ensuring no conflicts)
     if identity_val == '-1':
-        # 对于ID=-1，使用一个固定的偏移量确保不重复
+        # For ID=-1, use a fixed offset to ensure no repetition
         color_index = (base_color_index + 15) % len(colors)
     else:
         color_index = base_color_index
@@ -951,32 +951,32 @@ def get_variance_per_identity_style(identity_label: str, plot_type: str) -> Dict
         'color': colors[color_index],
         'linestyle': linestyles.get(identity_val, '-'),
         'marker': markers.get(identity_val, 'o'),
-        'markersize': 8 if identity_val == '1' else 6,  # ID=1 稍大的标记
+        'markersize': 8 if identity_val == '1' else 6,  # Slightly larger marker for ID=1
         'group': f'identity_{identity_val}'
     }
 
 
 def simplify_label(combo_label: str) -> str:
     """
-    简化组合标签，同时提供向后兼容的标签转换
+    Simplify combination labels and provide backward-compatible label conversion
     
-    将旧格式的标签转换为新格式以保持一致性：
+    Converts old format labels to new format for consistency:
     - "Random, ID-align=..." → "Random Zealots, ID-align=..."
     - "Clustered, ID-align=..." → "Clustered Zealots, ID-align=..."
     
     Args:
-    combo_label: 原始组合标签
+    combo_label: Original combination label
     
     Returns:
-    str: 转换后的标签
+    str: Converted label
     """
-    # 向后兼容：将旧格式标签转换为新格式
+    # Backward compatibility: convert old format labels to new format
     if combo_label.startswith('Random, ID-align='):
         return combo_label.replace('Random, ID-align=', 'Random Zealots, ID-align=')
     elif combo_label.startswith('Clustered, ID-align='):
         return combo_label.replace('Clustered, ID-align=', 'Clustered Zealots, ID-align=')
     else:
-        # 对于新格式标签或其他类型标签，直接返回
+        # For new format labels or other types, return directly
         return combo_label
 
 
@@ -987,17 +987,17 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                             smooth_method: str = 'savgol',
                             error_band_type: str = 'std') -> None:
     """
-    使用数据管理器绘制实验结果图表
+    Plot experiment results using the data manager
     
     Args:
-        data_manager: 数据管理器实例  
-        plot_type: 'zealot_numbers' 或 'morality_ratios'
-        enable_smoothing: 是否启用平滑和重采样
-        target_step: 重采样的目标步长（比如从步长1变为步长2）
-        smooth_method: 平滑方法 ('savgol', 'moving_avg', 'none')
-        error_band_type: zealot_numbers图表的error band类型 ('std' 或 'percentile')
+        data_manager: Data manager instance  
+        plot_type: 'zealot_numbers' or 'morality_ratios'
+        enable_smoothing: Whether to enable smoothing and resampling
+        target_step: Target step for resampling (e.g., from step 1 to step 2)
+        smooth_method: Smoothing method ('savgol', 'moving_avg', 'none')
+        error_band_type: Error band type for zealot_numbers plots ('std' or 'percentile')
     """
-    # 统一设置较大的最小字体，提升可读性
+    # Set a larger minimum font size for better readability
     plt.rcParams.update({
         'font.size': 16,
         'axes.titlesize': 26,
@@ -1007,11 +1007,11 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
         'legend.fontsize': 16
     })
 
-    # 从数据管理器获取绘图数据
+    # Get plotting data from the data manager
     all_results, x_values, total_runs_per_combination = data_manager.convert_to_plotting_format(plot_type)
     
     if not all_results:
-        print(f"❌ No data found for {plot_type} plotting")
+        print(f"No data found for {plot_type} plotting")
         return
     
     output_dir = str(data_manager.base_dir)
@@ -1029,7 +1029,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
     
     x_label = 'Number of Zealots' if plot_type == 'zealot_numbers' else 'Morality Ratio (%)'
     
-    # 计算总运行次数范围（用于文件名）
+    # Calculate total runs range (for filenames)
     min_runs = min(total_runs_per_combination.values()) if total_runs_per_combination else 0
     max_runs = max(total_runs_per_combination.values()) if total_runs_per_combination else 0
     
@@ -1038,34 +1038,34 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
     else:
         runs_suffix = f"_{min_runs}-{max_runs}runs"
     
-    # 创建 mean_plots 文件夹
+    # Create mean_plots folder
     plot_folders = {
         'mean': os.path.join(output_dir, 'mean_plots')
     }
     
     os.makedirs(plot_folders['mean'], exist_ok=True)
 
-    # 获取样式配置
+    # Get style configuration
     combo_labels = list(all_results.keys())
     style_config = get_enhanced_style_config(combo_labels, plot_type)
     
-    print(f"\n📝 Style Configuration for {plot_type}: {len(combo_labels)} combinations")
-    print(f"✅ Style configuration completed successfully")
+    print(f"\nStyle Configuration for {plot_type}: {len(combo_labels)} combinations")
+    print(f"Style configuration completed successfully")
     
-    # 为每个指标生成高质量的 mean plots
+    # Generate high-quality mean plots for each metric
     for metric in metrics:
         if enable_smoothing:
             print(f"  Generating smoothed plot for {metric_labels[metric]} (step={target_step}, method={smooth_method})...")
         else:
             print(f"  Generating high-quality mean plot for {metric_labels[metric]}...")
         
-        # 预处理数据：计算均值和标准差（为error bands做准备）
+        # Preprocess data: calculate mean and standard deviation (for error bands)
         processed_data = {}
         
         if metric == 'variance_per_identity_combined':
-            # 对于合并的 variance per identity 图表，为每个组合创建两条线
+            # For the combined variance per identity plot, create two lines for each combination
             for combo_label, results in all_results.items():
-                # 处理 identity=1 的数据
+                # Process data for identity=1
                 metric_data_1 = results['variance_per_identity_1']
                 means_1, stds_1 = [], []
                 lower_percentiles_1, upper_percentiles_1 = [], []
@@ -1076,12 +1076,12 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         means_1.append(np.mean(valid_runs))
                         stds_1.append(np.std(valid_runs, ddof=1) if len(valid_runs) > 1 else 0.0)
                         
-                        # 计算百分位数
+                        # Calculate percentiles
                         lower_p, upper_p = calculate_percentile_bands(valid_runs, percentile_range=(25.0, 75.0))
                         lower_percentiles_1.append(lower_p)
                         upper_percentiles_1.append(upper_p)
                         
-                        # 计算置信区间
+                        # Calculate confidence interval
                         lower_c, upper_c = calculate_confidence_interval(valid_runs, confidence_level=0.95)
                         lower_ci_1.append(lower_c)
                         upper_ci_1.append(upper_c)
@@ -1093,7 +1093,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         lower_ci_1.append(np.nan)
                         upper_ci_1.append(np.nan)
                 
-                # 处理 identity=-1 的数据
+                # Process data for identity=-1
                 metric_data_neg1 = results['variance_per_identity_-1']
                 means_neg1, stds_neg1 = [], []
                 lower_percentiles_neg1, upper_percentiles_neg1 = [], []
@@ -1104,12 +1104,12 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         means_neg1.append(np.mean(valid_runs))
                         stds_neg1.append(np.std(valid_runs, ddof=1) if len(valid_runs) > 1 else 0.0)
                         
-                        # 计算百分位数
+                        # Calculate percentiles
                         lower_p, upper_p = calculate_percentile_bands(valid_runs, percentile_range=(25.0, 75.0))
                         lower_percentiles_neg1.append(lower_p)
                         upper_percentiles_neg1.append(upper_p)
                         
-                        # 计算置信区间
+                        # Calculate confidence interval
                         lower_c, upper_c = calculate_confidence_interval(valid_runs, confidence_level=0.99)
                         lower_ci_neg1.append(lower_c)
                         upper_ci_neg1.append(upper_c)
@@ -1121,7 +1121,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         lower_ci_neg1.append(np.nan)
                         upper_ci_neg1.append(np.nan)
                 
-                # 创建两条线的数据
+                # Create data for two lines
                 processed_data[f"{combo_label} (ID=+1)"] = {
                     'means': np.array(means_1),
                     'stds': np.array(stds_1),
@@ -1143,7 +1143,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                     'base_combo': combo_label
                 }
         elif metric.startswith('variance_per_identity') and metric != 'variance_per_identity_combined':
-            # 对于单独的 variance per identity 指标，每个组合标签会被拆分为两条线
+            # For individual variance per identity metrics, each combo label is split into two lines
             identity_suffix = metric.split('_')[-1]  # '1' or '-1'
             
             for combo_label, results in all_results.items():
@@ -1158,12 +1158,12 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         means.append(np.mean(valid_runs))
                         stds.append(np.std(valid_runs, ddof=1) if len(valid_runs) > 1 else 0.0)
                         
-                        # 计算百分位数
+                        # Calculate percentiles
                         lower_p, upper_p = calculate_percentile_bands(valid_runs, percentile_range=(25.0, 75.0))
                         lower_percentiles.append(lower_p)
                         upper_percentiles.append(upper_p)
                         
-                        # 计算置信区间
+                        # Calculate confidence interval
                         lower_c, upper_c = calculate_confidence_interval(valid_runs, confidence_level=0.99)
                         lower_ci.append(lower_c)
                         upper_ci.append(upper_c)
@@ -1175,7 +1175,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         lower_ci.append(np.nan)
                         upper_ci.append(np.nan)
                 
-                # 为 variance per identity 创建带身份标识的标签
+                # Create labels with identity identifiers for variance per identity
                 identity_label = f"{combo_label} (ID={identity_suffix})"
                 processed_data[identity_label] = {
                     'means': np.array(means),
@@ -1186,7 +1186,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                     'upper_ci': np.array(upper_ci)
                 }
         else:
-            # 对于其他指标，计算均值、标准差、百分位数和置信区间
+            # For other metrics, calculate mean, std dev, percentiles, and confidence intervals
             for combo_label, results in all_results.items():
                 metric_data = results[metric]
                 means, stds = [], []
@@ -1199,12 +1199,12 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                         means.append(np.mean(valid_runs))
                         stds.append(np.std(valid_runs, ddof=1) if len(valid_runs) > 1 else 0.0)
                         
-                        # 计算百分位数（默认使用25th-75th百分位数）
+                        # Calculate percentiles (default: 25th-75th)
                         lower_p, upper_p = calculate_percentile_bands(valid_runs, percentile_range=(25.0, 75.0))
                         lower_percentiles.append(lower_p)
                         upper_percentiles.append(upper_p)
                         
-                        # 计算置信区间（默认使用99%置信区间）
+                        # Calculate confidence interval (default: 99%)
                         lower_c, upper_c = calculate_confidence_interval(valid_runs, confidence_level=0.99)
                         lower_ci.append(lower_c)
                         upper_ci.append(upper_c)
@@ -1225,9 +1225,9 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                     'upper_ci': np.array(upper_ci)
                 }
         
-        # 添加运行次数信息到标题（显示总run数）
+        # Add run count information to the title
         if plot_type == 'zealot_numbers':
-            # 根据error band类型确定标题
+            # Determine title based on error band type
             if error_band_type == 'std':
                 band_type_str = "Std Dev Bands"
             elif error_band_type == 'percentile':
@@ -1241,19 +1241,19 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
         else:
             title_suffix = f" ({min_runs}-{max_runs} total runs)" if min_runs != max_runs else f" ({min_runs} total runs)"
         
-        # 高质量均值曲线图
-        # 对于 variance per identity，使用更大的图表以容纳更多线条
+        # High-quality mean curve plot
+        # For variance per identity, use a larger figure to accommodate more lines
         if metric.startswith('variance_per_identity'):
             plt.figure(figsize=(24, 14) if plot_type == 'morality_ratios' else (20, 12))
         else:
             plt.figure(figsize=(20, 12) if plot_type == 'morality_ratios' else (18, 10))
             
         for display_label, data in processed_data.items():
-            # 对于 variance per identity，需要从显示标签中提取原始组合标签来获取runs信息
+            # For variance per identity, extract the original combo label to get run info
             if metric.startswith('variance_per_identity'):
-                # 从 "Original Label (ID=1)" 中提取 "Original Label"
+                # Extract "Original Label" from "Original Label (ID=1)"
                 if metric == 'variance_per_identity_combined':
-                    # 对于合并图表，使用 base_combo 字段
+                    # For combined plot, use the base_combo field
                     original_combo_label = data.get('base_combo', display_label.split(' (ID=')[0])
                 else:
                     original_combo_label = display_label.split(' (ID=')[0]
@@ -1262,7 +1262,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                 original_combo_label = display_label
                 runs_info = total_runs_per_combination.get(display_label, 0)
             
-            # 应用平滑和重采样
+            # Apply smoothing and resampling
             if enable_smoothing:
                 smoothed_x, smoothed_means = resample_and_smooth_data(
                     np.array(x_values), data['means'], 
@@ -1270,13 +1270,13 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                     smooth_window=3
                 )
                 
-                # 最终平滑
+                # Final smoothing
                 final_means = apply_final_smooth(smoothed_means, method=smooth_method, window=5)
                 
-                # 使用平滑后的数据
+                # Use smoothed data
                 plot_x, plot_y = smoothed_x, final_means
                 
-                # 同时更新标签显示平滑信息
+                # Also update label to show smoothing info
                 short_label = simplify_label(display_label)
                 label_with_runs = f"{short_label} (n={runs_info}, smoothed)"
             else:
@@ -1284,13 +1284,13 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                 short_label = simplify_label(display_label)
                 label_with_runs = f"{short_label} (n={runs_info})"
             
-            # 所有 metric 统一使用 style_config
+            # All metrics use style_config uniformly
             style = style_config.get(display_label, {})
             
-            # 获取颜色和样式
+            # Get color and style
             line_color = style.get('color', 'blue')
             
-            # 绘制主要的均值曲线
+            # Plot the main mean curve
             plt.plot(plot_x, plot_y, label=label_with_runs, 
                     color=line_color,
                     linestyle=style.get('linestyle', '-'),
@@ -1298,22 +1298,22 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                     linewidth=3.5, markersize=style.get('markersize', 10), alpha=0.85,
                     markeredgewidth=2, markeredgecolor='white')
             
-            # 为 zealot_numbers 添加 error bands
+            # Add error bands for zealot_numbers
             if plot_type == 'zealot_numbers' and not enable_smoothing:
                 if error_band_type == 'std' and 'stds' in data:
-                    # Use standard deviation method（均值 ± 标准差）
+                    # Use standard deviation method (mean ± std)
                     means = data['means']
                     stds = data['stds']
                     draw_std_error_bands(x_values, means, stds, line_color, alpha=0.2)
                     
                 elif error_band_type == 'percentile' and 'lower_percentiles' in data and 'upper_percentiles' in data:
-                    # Use percentile method（25th-75th百分位数）
+                    # Use percentile method (25th-75th percentile)
                     lower_percentiles = data['lower_percentiles']
                     upper_percentiles = data['upper_percentiles']
                     draw_percentile_error_bands(x_values, lower_percentiles, upper_percentiles, line_color, alpha=0.2)
                     
                 elif error_band_type == 'confidence' and 'lower_ci' in data and 'upper_ci' in data:
-                    # Use confidence interval method（99%置信区间）
+                    # Use confidence interval method (99% confidence interval)
                     lower_ci = data['lower_ci']
                     upper_ci = data['upper_ci']
                     draw_confidence_interval_error_bands(x_values, lower_ci, upper_ci, line_color, alpha=0.2)
@@ -1323,27 +1323,27 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
         plt.title(f'{metric_labels[metric]} vs {x_label}{title_suffix}', fontsize=26, fontweight='bold')
         plt.tick_params(axis='both', labelsize=18)
         
-        # 根据指标类型和线条数量调整图例布局
+        # Adjust legend layout based on metric type and number of lines
         if metric == 'variance_per_identity_combined':
-            # 合并的 variance per identity 图表：每个组合2条线
+            # Combined variance per identity plot: 2 lines per combination
             if plot_type == 'morality_ratios':
-                # 20条线，使用4列
+                # 20 lines, use 4 columns
                 plt.legend(bbox_to_anchor=(0.5, -0.20), loc='upper center', ncol=4, 
                           fontsize=14, frameon=True, fancybox=True, shadow=True)
             else:
-                # 8条线，使用3列
+                # 8 lines, use 3 columns
                 plt.legend(bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=3, fontsize=16)
         # elif metric.startswith('variance_per_identity'):
-        #     # 单独的 variance per identity 图表有更多线条，需要更多列和更小字体
+        #     # Individual variance per identity plots have more lines, need more columns and smaller font
         #     if plot_type == 'morality_ratios':
-        #         # 20条线，使用4列
+        #         # 20 lines, use 4 columns
         #         plt.legend(bbox_to_anchor=(0.5, -0.20), loc='upper center', ncol=4, 
         #                   fontsize=10, frameon=True, fancybox=True, shadow=True)
         #     else:
-        #         # 8条线，使用3列
+        #         # 8 lines, use 3 columns
         #         plt.legend(bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=3, fontsize=11)
         else:
-            # 其他指标保持原有布局
+            # Other metrics keep original layout
             if plot_type == 'morality_ratios':
                 plt.legend(bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=3, 
                           fontsize=16, frameon=True, fancybox=True, shadow=True)
@@ -1353,7 +1353,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
         plt.grid(True, alpha=0.3, linestyle='--')
         plt.tight_layout()
         
-        # 为文件名添加平滑标识和error band类型
+        # Add smoothing identifier and error band type to filename
         if enable_smoothing:
             if plot_type == 'zealot_numbers':
                 filename = f"{plot_type}_{metric}_smoothed_step{target_step}_{smooth_method}{runs_suffix}.png"
@@ -1361,7 +1361,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                 filename = f"{plot_type}_{metric}_smoothed_step{target_step}_{smooth_method}{runs_suffix}.png"
         else:
             if plot_type == 'zealot_numbers':
-                # 添加error band类型到文件名
+                # Add error band type to filename
                 if error_band_type == 'std':
                     band_type_suffix = "_std_bands"
                 elif error_band_type == 'percentile':
@@ -1375,7 +1375,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
                 filename = f"{plot_type}_{metric}_mean{runs_suffix}.png"
         filepath = os.path.join(plot_folders['mean'], filename)
         
-        # 高质量PNG保存 (DPI 300)
+        # High-quality PNG save (DPI 300)
         plt.savefig(filepath, dpi=300, bbox_inches='tight', 
                    facecolor='white', edgecolor='white', 
                    format='png', transparent=False, 
@@ -1388,39 +1388,39 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
 
 
 # =====================================
-# 高级接口函数
+# High-level interface functions
 # =====================================
 
 def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis", 
                            num_runs: int = 5, max_zealots: int = 50, max_morality: int = 30,
                            batch_name: str = "", num_processes: int = 1):
     """
-    运行测试并使用新的数据管理器保存数据（第一部分）
+    Run tests and save data using the new data manager (Part 1)
     
     Args:
-    output_dir: 输出目录
-    num_runs: 本次运行的次数
-    max_zealots: 最大zealot数量
-    max_morality: 最大morality ratio (%)
-    batch_name: 批次名称，用于标识本次运行
-    num_processes: 并行进程数，1表示串行执行
+    output_dir: Output directory
+    num_runs: Number of runs for this execution
+    max_zealots: Maximum number of zealots
+    max_morality: Maximum morality ratio (%)
+    batch_name: Batch name to identify this run
+    num_processes: Number of parallel processes, 1 means serial execution
     """
     print("🔬 Running Tests and Accumulating Data with New Data Manager")
     print("=" * 70)
     
     start_time = time.time()
     
-    # 创建数据管理器
+    # Create data manager
     data_manager = ExperimentDataManager(output_dir)
     
-    # 获取参数组合
+    # Get parameter combinations
     combinations = create_config_combinations()
     
     if not batch_name:
         batch_name = time.strftime("%Y%m%d_%H%M%S")
     
-    # 生成批次种子，确保不同批次产生不同的随机结果
-    batch_seed = int(time.time() * 1000) % (2**31)  # 使用时间戳生成种子
+    # Generate batch seed to ensure different batches produce different random results
+    batch_seed = int(time.time() * 1000) % (2**31)  # Use timestamp to generate seed
     
     print(f"📊 Batch Configuration:")
     print(f"   Batch name: {batch_name}")
@@ -1432,7 +1432,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     print(f"   Storage format: Parquet (optimized for space and speed)")
     print()
     
-    # # === 处理图1：x轴为zealot numbers ===
+    # # === Process Plot 1: x-axis is zealot numbers ===
     print("📈 Running Test Type 1: Zealot Numbers Analysis")
     print("-" * 50)
     
@@ -1446,7 +1446,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
         results = run_parameter_sweep('zealot_numbers', combo, zealot_x_values, num_runs, num_processes, batch_seed)
         zealot_results[combo['label']] = results
     
-    # 使用新的数据管理器保存zealot numbers的数据
+    # Save zealot numbers data using the new data manager
     zealot_batch_metadata = {
         'batch_id': batch_name,
         'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1465,7 +1465,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     print(f"⏱️  Test Type 1 completed in: {format_duration(plot1_duration)}")
     print()
     
-    # === 处理图2：x轴为morality ratio ===
+    # === Process Plot 2: x-axis is morality ratio ===
     print("📈 Running Test Type 2: Morality Ratio Analysis")
     print("-" * 50)
     
@@ -1479,7 +1479,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
         results = run_parameter_sweep('morality_ratios', combo, morality_x_values, num_runs, num_processes, batch_seed)
         morality_results[combo['label']] = results
     
-    # 使用新的数据管理器保存morality ratio的数据
+    # Save morality ratio data using the new data manager
     morality_batch_metadata = {
         'batch_id': batch_name,
         'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1498,7 +1498,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     print(f"⏱️  Test Type 2 completed in: {format_duration(plot2_duration)}")
     print()
     
-    # 计算总耗时
+    # Calculate total time
     end_time = time.time()
     elapsed_time = end_time - start_time
     hours, remainder = divmod(elapsed_time, 3600)
@@ -1514,7 +1514,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     print(f"   Total execution time: {format_duration(elapsed_time)}")
     print(f"📁 Data saved using Parquet format in: {output_dir}/")
     
-    # 保存实验配置到数据管理器
+    # Save experiment configuration to data manager
     experiment_config = {
         'batch_name': batch_name,
         'num_runs': num_runs,
@@ -1525,7 +1525,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     }
     data_manager.save_experiment_config(experiment_config)
     
-    # 显示数据管理器摘要
+    # Display data manager summary
     print("\n" + data_manager.export_summary_report())
 
 
@@ -1535,17 +1535,17 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
                              smooth_method: str = 'savgol',
                              error_band_type: str = 'std'):
     """
-    从新的数据管理器中读取数据并生成图表（第二部分）
+    Read data from the new data manager and generate plots (Part 2)
     
-    注意：zealot_numbers图表将强制关闭平滑以显示error bands，
-         morality_ratios图表将使用用户指定的平滑设置
+    Note: For zealot_numbers plots, smoothing will be forced off to show error bands.
+         For morality_ratios plots, the user-specified smoothing settings will be used.
     
     Args:
-        output_dir: 输出目录
-        enable_smoothing: 是否启用平滑处理（仅影响morality_ratios图表）
-        target_step: 重采样步长（2表示从101个点变为51个点）
-        smooth_method: 平滑方法 ('savgol', 'moving_avg', 'none')
-        error_band_type: zealot_numbers图表的error band类型 ('std' 或 'percentile')
+        output_dir: Output directory
+        enable_smoothing: Whether to enable smoothing (only affects morality_ratios plots)
+        target_step: Resampling step (2 means resampling from 101 to 51 points)
+        smooth_method: Smoothing method ('savgol', 'moving_avg', 'none')
+        error_band_type: Error band type for zealot_numbers plots ('std' or 'percentile')
     """
     print("📊 Generating Plots from Data Manager")
     if enable_smoothing:
@@ -1554,18 +1554,18 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
     
     start_time = time.time()
     
-    # 创建数据管理器
+    # Create data manager
     data_manager = ExperimentDataManager(output_dir)
     
-    # 显示数据摘要
+    # Display data summary
     print("\n" + data_manager.export_summary_report())
     
-    # 生成zealot numbers图表（关闭平滑以显示error bands）
+    # Generate zealot numbers plots (with smoothing off to show error bands)
     print("\n📈 Generating Zealot Numbers Plots...")
     zealot_summary = data_manager.get_experiment_summary('zealot_numbers')
     if zealot_summary['total_records'] > 0:
         plot_results_with_manager(data_manager, 'zealot_numbers', 
-                                False, target_step, smooth_method, error_band_type)  # 强制关闭平滑，使用指定的error band类型
+                                False, target_step, smooth_method, error_band_type)  # Force smoothing off, use specified error band type
         if error_band_type == 'std':
             band_type_description = "standard deviation"
         elif error_band_type == 'percentile':
@@ -1578,12 +1578,12 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
     else:
         print("❌ No zealot numbers data found")
     
-    # 生成morality ratios图表（保持用户设置的平滑选项）
+    # Generate morality ratios plots (keeping user-defined smoothing options)
     print("\n📈 Generating Morality Ratios Plots...")
     morality_summary = data_manager.get_experiment_summary('morality_ratios')
     if morality_summary['total_records'] > 0:
         plot_results_with_manager(data_manager, 'morality_ratios',
-                                enable_smoothing, target_step, smooth_method, 'std')  # morality_ratios不使用error bands，传递默认值
+                                enable_smoothing, target_step, smooth_method, 'std')  # morality_ratios does not use error bands, pass default
         if enable_smoothing:
             print(f"✅ Generated {len(morality_summary['combinations'])} morality ratios plots with smoothing")
         else:
@@ -1591,7 +1591,7 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
     else:
         print("❌ No morality ratios data found")
     
-    # 计算总耗时
+    # Calculate total time
     end_time = time.time()
     elapsed_time = end_time - start_time
     
@@ -1619,23 +1619,23 @@ def run_zealot_morality_analysis(output_dir: str = "results/zealot_morality_anal
                                 num_runs: int = 5, max_zealots: int = 50, max_morality: int = 30, num_processes: int = 1,
                                 error_band_type: str = 'std'):
     """
-    运行完整的zealot和morality分析实验（保持向后兼容）
+    Run the complete zealot and morality analysis experiment (backward compatible)
     
     Args:
-    output_dir: 输出目录
-    num_runs: 每个参数点的运行次数
-    max_zealots: 最大zealot数量
-    max_morality: 最大morality ratio (%)
-    num_processes: 并行进程数，1表示串行执行
-    error_band_type: zealot_numbers图表的error band类型 ('std' 或 'percentile')
+    output_dir: Output directory
+    num_runs: Number of runs per parameter point
+    max_zealots: Maximum number of zealots
+    max_morality: Maximum morality ratio (%)
+    num_processes: Number of parallel processes, 1 means serial execution
+    error_band_type: Error band type for zealot_numbers plots ('std' or 'percentile')
     """
     print("🔬 Starting Complete Zealot and Morality Analysis Experiment")
     print("=" * 70)
     
-    # 第一步：运行测试并累积数据
+    # Step 1: Run tests and accumulate data
     run_and_accumulate_data(output_dir, num_runs, max_zealots, max_morality, "", num_processes)
     
-    # 第二步：从累积数据生成图表
+    # Step 2: Generate plots from accumulated data
     plot_from_accumulated_data(output_dir, error_band_type=error_band_type)
 
 
@@ -1643,39 +1643,39 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
                                num_runs: int = 5, max_morality: int = 30,
                                batch_name: str = "", num_processes: int = 1):
     """
-    单独运行 no zealot 的 morality ratio 数据收集（使用新数据管理器）
+    Run no-zealot morality ratio data collection separately (using new data manager)
     
     Args:
-    output_dir: 输出目录
-    num_runs: 每个参数点的运行次数
-    max_morality: 最大 morality ratio (%)
-    batch_name: 批次名称
-    num_processes: 并行进程数，1表示串行执行
+    output_dir: Output directory
+    num_runs: Number of runs per parameter point
+    max_morality: Maximum morality ratio (%)
+    batch_name: Batch name
+    num_processes: Number of parallel processes, 1 means serial execution
     """
     print("🔬 Running No Zealot Morality Ratio Data Collection with New Data Manager")
     print("=" * 70)
     
     start_time = time.time()
     
-    # 创建数据管理器
+    # Create data manager
     data_manager = ExperimentDataManager(output_dir)
     
-    # 获取所有参数组合
+    # Get all parameter combinations
     combinations = create_config_combinations()
     
-    # 只选择 zealot_mode 为 'none' 的组合
+    # Select only combinations where zealot_mode is 'none'
     no_zealot_combinations = [combo for combo in combinations['morality_ratios'] 
                              if combo['zealot_mode'] == 'none']
     
     if not no_zealot_combinations:
-        print("❌ 没有找到 zealot_mode='none' 的组合")
+        print("❌ No combinations with zealot_mode='none' found")
         return
     
     if not batch_name:
         batch_name = f"no_zealot_{time.strftime('%Y%m%d_%H%M%S')}"
     
-    # 生成批次种子，确保不同批次产生不同的随机结果
-    batch_seed = int(time.time() * 1000) % (2**31)  # 使用时间戳生成种子
+    # Generate batch seed to ensure different batches produce different random results
+    batch_seed = int(time.time() * 1000) % (2**31)  # Use timestamp to generate seed
     
     print(f"📊 No Zealot Batch Configuration:")
     print(f"   Batch name: {batch_name}")
@@ -1686,7 +1686,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     print(f"   Storage format: Parquet (optimized for space and speed)")
     print()
     
-    # 设置 morality ratio 的 x 轴取值
+    # Set x-axis values for morality ratio
     morality_x_values = list(range(0, max_morality + 1, 2))  # 0, 2, 4, ..., max_morality
     morality_results = {}
     
@@ -1698,7 +1698,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
         results = run_parameter_sweep('morality_ratios', combo, morality_x_values, num_runs, num_processes, batch_seed)
         morality_results[combo['label']] = results
     
-    # 使用新的数据管理器保存 no zealot morality ratio 数据
+    # Save no-zealot morality ratio data using the new data manager
     no_zealot_batch_metadata = {
         'batch_id': batch_name,
         'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1712,7 +1712,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     
     save_data_with_manager(data_manager, 'morality_ratios', morality_x_values, morality_results, no_zealot_batch_metadata)
     
-    # 计算耗时
+    # Calculate time taken
     end_time = time.time()
     elapsed_time = end_time - start_time
     
@@ -1722,7 +1722,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     print(f"⏱️  Total execution time: {format_duration(elapsed_time)}")
     print(f"📁 Data saved using Parquet format in: {output_dir}/")
     
-    # 保存实验配置到数据管理器
+    # Save experiment configuration to data manager
     experiment_config = {
         'batch_name': batch_name,
         'num_runs': num_runs,
@@ -1733,20 +1733,20 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     }
     data_manager.save_experiment_config(experiment_config)
     
-    # 显示数据管理器摘要
+    # Display data manager summary
     print("\n" + data_manager.export_summary_report())
 
 
 def calculate_percentile_bands(valid_runs: List[float], percentile_range: Tuple[float, float] = (25.0, 75.0)) -> Tuple[float, float]:
     """
-    计算给定数据的百分位数区间
+    Calculate the percentile range for the given data
     
     Args:
-        valid_runs: 有效运行数据列表
-        percentile_range: 百分位数范围，默认为 (25.0, 75.0) 即25th-75th百分位数
+        valid_runs: List of valid run data
+        percentile_range: Percentile range, defaults to (25.0, 75.0) for 25th-75th percentile
     
     Returns:
-        tuple: (下百分位数, 上百分位数)
+        tuple: (lower_percentile, upper_percentile)
     """
     if len(valid_runs) < 2:
         return 0.0, 0.0
@@ -1759,30 +1759,30 @@ def calculate_percentile_bands(valid_runs: List[float], percentile_range: Tuple[
 
 def calculate_confidence_interval(valid_runs: List[float], confidence_level: float = 0.99) -> Tuple[float, float]:
     """
-    计算给定数据的置信区间
+    Calculate the confidence interval for the given data
     
     Args:
-        valid_runs: 有效运行数据列表
-        confidence_level: 置信水平，默认为 0.99 (99%置信区间)
+        valid_runs: List of valid run data
+        confidence_level: Confidence level, defaults to 0.99 (99% confidence interval)
     
     Returns:
-        tuple: (置信区间下界, 置信区间上界)
+        tuple: (lower_bound_of_confidence_interval, upper_bound_of_confidence_interval)
     """
     if len(valid_runs) < 2:
         return 0.0, 0.0
     
-    # 计算样本均值和标准误差
+    # Calculate sample mean and standard error
     sample_mean = np.mean(valid_runs)
-    sample_std = np.std(valid_runs, ddof=1)  # 样本标准差
+    sample_std = np.std(valid_runs, ddof=1)  # Sample standard deviation
     sample_size = len(valid_runs)
     standard_error = sample_std / np.sqrt(sample_size)
     
-    # 计算t值（使用t分布，对小样本更准确）
+    # Calculate t-value (using t-distribution, more accurate for small samples)
     alpha = 1 - confidence_level
     degrees_of_freedom = sample_size - 1
     t_value = stats.t.ppf(1 - alpha/2, degrees_of_freedom)
     
-    # 计算置信区间
+    # Calculate confidence interval
     margin_of_error = t_value * standard_error
     lower_bound = sample_mean - margin_of_error
     upper_bound = sample_mean + margin_of_error
@@ -1792,20 +1792,20 @@ def calculate_confidence_interval(valid_runs: List[float], confidence_level: flo
 
 def draw_std_error_bands(x_values, means, stds, line_color, alpha=0.2):
     """
-    绘制标准差 error bands（均值 ± 标准差）
+    Draw standard deviation error bands (mean ± std)
     
     Args:
-        x_values: x轴数据
-        means: 均值数组
-        stds: 标准差数组
-        line_color: 线条颜色
-        alpha: 透明度
+        x_values: x-axis data
+        means: Array of means
+        stds: Array of standard deviations
+        line_color: Line color
+        alpha: Transparency
     """
-    # 计算上下边界
+    # Calculate upper and lower bounds
     upper_bound = means + stds
     lower_bound = means - stds
     
-    # 绘制 error bands（使用相同颜色但透明度较低）
+    # Draw error bands (using the same color but lower alpha)
     plt.fill_between(x_values, lower_bound, upper_bound, 
                    color=line_color, alpha=alpha, 
                    linewidth=0, interpolate=True)
@@ -1813,16 +1813,16 @@ def draw_std_error_bands(x_values, means, stds, line_color, alpha=0.2):
 
 def draw_percentile_error_bands(x_values, lower_percentiles, upper_percentiles, line_color, alpha=0.2):
     """
-    绘制百分位数 error bands（下百分位数 - 上百分位数）
+    Draw percentile error bands (lower percentile - upper percentile)
     
     Args:
-        x_values: x轴数据
-        lower_percentiles: 下百分位数数组
-        upper_percentiles: 上百分位数数组
-        line_color: 线条颜色
-        alpha: 透明度
+        x_values: x-axis data
+        lower_percentiles: Array of lower percentiles
+        upper_percentiles: Array of upper percentiles
+        line_color: Line color
+        alpha: Transparency
     """
-    # 绘制 error bands（使用相同颜色但透明度较低）
+    # Draw error bands (using the same color but lower alpha)
     plt.fill_between(x_values, lower_percentiles, upper_percentiles, 
                    color=line_color, alpha=alpha, 
                    linewidth=0, interpolate=True)
@@ -1830,82 +1830,82 @@ def draw_percentile_error_bands(x_values, lower_percentiles, upper_percentiles, 
 
 def draw_confidence_interval_error_bands(x_values, lower_ci, upper_ci, line_color, alpha=0.2):
     """
-    绘制置信区间 error bands（置信区间下界 - 置信区间上界）
+    Draw confidence interval error bands (lower CI bound - upper CI bound)
     
     Args:
-        x_values: x轴数据
-        lower_ci: 置信区间下界数组
-        upper_ci: 置信区间上界数组
-        line_color: 线条颜色
-        alpha: 透明度
+        x_values: x-axis data
+        lower_ci: Array of lower confidence interval bounds
+        upper_ci: Array of upper confidence interval bounds
+        line_color: Line color
+        alpha: Transparency
     """
-    # 绘制 error bands（使用相同颜色但透明度较低）
+    # Draw error bands (using the same color but lower alpha)
     plt.fill_between(x_values, lower_ci, upper_ci, 
                    color=line_color, alpha=alpha, 
                    linewidth=0, interpolate=True)
 
 
 if __name__ == "__main__":
-    # 新的分离式使用方法：
+    # New separate usage method:
     
-    # 开始计时
+    # Start timer
     main_start_time = time.time()
     
-    # 方法1：分两步运行
-    # 第一步：运行测试并积累数据（可以多次运行以积累更多数据）
+    # Method 1: Run in two steps
+    # Step 1: Run tests and accumulate data (can be run multiple times to accumulate more data)
     print("=" * 50)
-    print("🚀 示例：分步骤运行实验")
+    print("🚀 Example: Running experiment in steps")
     print("=" * 50)
     
-    # 数据收集阶段
+    # Data collection phase
     data_collection_start_time = time.time()
     
-    # 可以多次运行以下命令来积累数据：
+    # The following command can be run multiple times to accumulate data:
     run_and_accumulate_data(
         output_dir="results/zealot_morality_analysis",
-        num_runs=100,  # 每次运行100轮测试
+        num_runs=100,  # Run 100 tests each time
         max_zealots=100,  
         max_morality=100,
-        # batch_name="batch_001"  # 可选：给批次命名
-        num_processes=8  # 使用8个进程进行并行计算
+        # batch_name="batch_001"  # Optional: name the batch
+        num_processes=8  # Use 8 processes for parallel computation
     )
     
     data_collection_end_time = time.time()
     data_collection_duration = data_collection_end_time - data_collection_start_time
     
 
-    # 第二步：绘图阶段
+    # Step 2: Plotting phase
 
     plotting_start_time = time.time()
 
     # ===== ERROR BANDS Configuration: Switch by commenting/uncommenting =====
-    # Method 1: Standard deviation error bands（均值 ± 标准差）
+    # Method 1: Standard Deviation Bands: Shows mean ± standard deviation
     # error_band_type = 'std'  # Use standard deviation method
-    # Method 2: Percentile error bands（25th-75th百分位数）
+    # Method 2: Percentile Bands: Shows 25th to 75th percentile range
     # error_band_type = 'percentile'  # Use percentile method
-    # Method 3: Confidence interval error bands（99%置信区间）
+    # Method 3: Confidence Interval Bands: Shows 99% confidence interval
     error_band_type = 'confidence'  # Use confidence interval method
 
     plot_from_accumulated_data(
         output_dir="results/zealot_morality_analysis",
-        enable_smoothing=False,       # 不启用平滑
-        target_step=2,             # 从步长1重采样到步长2（101个点→51个点）
-        smooth_method='savgol',     # 使用Savitzky-Golay平滑
-        error_band_type=error_band_type  # 使用上面配置的error band类型
+        enable_smoothing=False,       # Disable smoothing
+        target_step=2,             # Resample from step 1 to step 2 (101 points -> 51 points)
+        smooth_method='savgol',     # Use Savitzky-Golay smoothing
+        error_band_type=error_band_type  # Use the error band type configured above
     )
     
     plotting_end_time = time.time()
     plotting_duration = plotting_end_time - plotting_start_time
     
-    # 计算总耗时
+    # Calculate total time
     main_end_time = time.time()
     total_duration = main_end_time - main_start_time
     
-    # 显示耗时总结
+    # Display timing summary
     print("\n" + "🕒" * 50)
-    print("⏱️  完整实验耗时总结")
+    print("⏱️  Complete Experiment Timing Summary")
     print("🕒" * 50)
-    print(f"📊 数据收集阶段耗时: {format_duration(data_collection_duration)}")
-    print(f"📈 图表生成阶段耗时: {format_duration(plotting_duration)}")
-    print(f"🎯 总耗时: {format_duration(total_duration)}")
+    print(f"📊 Data collection phase took: {format_duration(data_collection_duration)}")
+    print(f"📈 Plot generation phase took: {format_duration(plotting_duration)}")
+    print(f"🎯 Total time: {format_duration(total_duration)}")
     print("🕒" * 50) 
