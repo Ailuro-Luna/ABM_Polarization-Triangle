@@ -976,7 +976,7 @@ def draw_zealot_network(sim, zealot_ids, title, filename):
     filename -- output filename
     """
     plt.figure(figsize=(12, 10))
-    plt.title(title, fontsize=16)
+    plt.title(title, fontsize=18)
     
     node_colors = []
     for i in range(sim.num_agents):

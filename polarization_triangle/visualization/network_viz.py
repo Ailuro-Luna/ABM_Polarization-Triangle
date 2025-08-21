@@ -96,7 +96,7 @@ def draw_network(sim, mode, title, filename):
                           alpha=0.7, width=1.2, ax=ax)
     
     # 设置标题和样式
-    ax.set_title(title, fontsize=14)
+    ax.set_title(title, fontsize=18)
     ax.set_aspect('equal', 'box')
     ax.axis('off')
     
