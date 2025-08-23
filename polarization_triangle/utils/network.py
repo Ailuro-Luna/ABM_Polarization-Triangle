@@ -15,26 +15,26 @@ def create_network(num_agents: int, network_type: str, network_params: Dict[str,
                    use_network_pool: bool = True, network_pool_dir: str = None,
                    network_pool_random_selection: bool = True) -> nx.Graph:
     """
-    Create network based on specified type and parameters
+    Create a network based on the specified type and parameters.
     
     Parameters:
-    num_agents -- Number of agents
-    network_type -- Network type ("random", "lfr", "community", "ws", "ba")
-    network_params -- Network parameters dictionary
-    use_network_pool -- Whether to use network pool (only effective for LFR networks)
-    network_pool_dir -- Network pool directory
-    network_pool_random_selection -- Whether to randomly select networks from pool
+    num_agents -- The number of agents.
+    network_type -- The type of network ("random", "lfr", "community", "ws", "ba").
+    network_params -- A dictionary of network parameters.
+    use_network_pool -- Whether to use a network pool (only effective for LFR networks).
+    network_pool_dir -- The directory of the network pool.
+    network_pool_random_selection -- Whether to randomly select networks from the pool.
     
     Returns:
-    Created networkx graph object
+    The created networkx graph object.
     """
     if network_params is None:
         network_params = {}
         
-    if network_type == 'random':
-        p = network_params.get("p", 0.1)
-        return nx.erdos_renyi_graph(n=num_agents, p=p)
-    elif network_type == 'lfr':
+    # if network_type == 'random':
+    #     p = network_params.get("p", 0.1)
+    #     return nx.erdos_renyi_graph(n=num_agents, p=p)
+    if network_type == 'lfr':
         # Check whether to use network pool
         if use_network_pool and network_pool_dir:
             print(f"Loading LFR network from network pool: {network_pool_dir}")
@@ -83,55 +83,55 @@ def create_network(num_agents: int, network_type: str, network_params: Dict[str,
             max_iters=max_iters,
             seed=seed
         )
-    elif network_type == 'community':
-        community_sizes = [num_agents // 4] * 4
-        intra_p = network_params.get("intra_p", 0.8)
-        inter_p = network_params.get("inter_p", 0.1)
-        return nx.random_partition_graph(community_sizes, intra_p, inter_p)
-    elif network_type == 'ws':
-        k = network_params.get("k", 4)
-        p = network_params.get("p", 0.1)
-        return nx.watts_strogatz_graph(n=num_agents, k=k, p=p)
-    elif network_type == 'ba':
-        m = network_params.get("m", 2)
-        return nx.barabasi_albert_graph(n=num_agents, m=m)
-    else:
-        return nx.erdos_renyi_graph(n=num_agents, p=0.1)
+    # elif network_type == 'community':
+    #     community_sizes = [num_agents // 4] * 4
+    #     intra_p = network_params.get("intra_p", 0.8)
+    #     inter_p = network_params.get("inter_p", 0.1)
+    #     return nx.random_partition_graph(community_sizes, intra_p, inter_p)
+    # elif network_type == 'ws':
+    #     k = network_params.get("k", 4)
+    #     p = network_params.get("p", 0.1)
+    #     return nx.watts_strogatz_graph(n=num_agents, k=k, p=p)
+    # elif network_type == 'ba':
+    #     m = network_params.get("m", 2)
+    #     return nx.barabasi_albert_graph(n=num_agents, m=m)
+    # else:
+    #     return nx.erdos_renyi_graph(n=num_agents, p=0.1)
 
 
 def handle_isolated_nodes(G: nx.Graph) -> None:
     """
-    Handle isolated nodes in network
+    Handle isolated nodes in the network.
     
-    参数:
-    G -- 网络图对象
+    Parameters:
+    G -- The network graph object.
     
     Processing method:
-    1. Find all isolated nodes (nodes with degree 0)
-    2. Randomly connect each isolated node to other nodes in the network
+    1. Find all isolated nodes (nodes with degree 0).
+    2. Randomly connect each isolated node to other nodes in the network.
     """
     isolated_nodes = [node for node, degree in dict(G.degree()).items() if degree == 0]
 
     if not isolated_nodes:
-        return  # If no isolated nodes, return directly
+        return  # If there are no isolated nodes, return directly.
 
     print(f"Detected {len(isolated_nodes)} isolated nodes, processing...")
 
-    # Get list of non-isolated nodes
+    # Get a list of non-isolated nodes.
     non_isolated = [node for node in G.nodes() if node not in isolated_nodes]
 
     if not non_isolated:
-        # If all nodes are isolated (rare case), create a ring connection
+        # If all nodes are isolated (a rare case), create a ring connection.
         for i in range(len(isolated_nodes)):
             G.add_edge(isolated_nodes[i], isolated_nodes[(i + 1) % len(isolated_nodes)])
         return
 
-    # Randomly connect each isolated node to 1-3 non-isolated nodes
+    # Randomly connect each isolated node to 1-3 non-isolated nodes.
     for node in isolated_nodes:
-        # Randomly decide connection count, minimum 1, maximum 3 or all non-isolated nodes
+        # Randomly decide the number of connections, minimum 1, maximum 3 or all non-isolated nodes.
         num_connections = min(np.random.randint(1, 4), len(non_isolated))
-        # Randomly select connection targets
+        # Randomly select connection targets.
         targets = np.random.choice(non_isolated, num_connections, replace=False)
-        # Add edges
+        # Add edges.
         for target in targets:
             G.add_edge(node, target)

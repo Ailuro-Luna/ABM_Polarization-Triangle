@@ -29,13 +29,13 @@ def draw_network(sim, mode, title, filename):
     # Set node size
     node_size = 60
     
-    # 根据mode设置颜色
+    # Set colors based on mode
     if mode == "opinion":
         cmap = cm.coolwarm
         norm = colors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
         node_colors = [cmap(norm(op)) for op in sim.opinions]
         
-        # 添加colorbar
+        # Add colorbar
         sm = cm.ScalarMappable(norm=norm, cmap=cmap)
         sm.set_array([])
         cbar = fig.colorbar(sm, ax=ax, shrink=0.8, pad=0.02)
@@ -48,14 +48,14 @@ def draw_network(sim, mode, title, filename):
         node_colors = ['#1a9850' if m == 1 else '#d73027' for m in sim.morals]
         
     elif mode == "identity_morality":
-        # 综合显示身份和道德化信息的模式
-        # 颜色基于身份，边框基于道德化，形状基于zealot状态
+        # Mode for combined display of identity and moralization information
+        # Color based on identity, border based on moralization, shape based on zealot state
         node_colors = ['#ff7f00' if iden == 1 else '#4daf4a' for iden in sim.identities]
     
-    # 分组绘制节点：根据zealot状态和道德化状态分为三组
-    # 注意：zealot的金色边框优先级高于道德化的黑色边框
+    # Group and draw nodes: divide into three groups based on zealot and moralization status
+    # Note: The gold border for zealots has priority over the black border for moralization
     
-    # 1. 普通agent，非道德化 (圆形，无边框)
+    # 1. Normal agent, non-moralized (circle, no border)
     normal_non_moral = []
     normal_non_moral_colors = []
     for i in range(sim.num_agents):
@@ -69,7 +69,7 @@ def draw_network(sim, mode, title, filename):
                               node_size=node_size, edgecolors='none', 
                               linewidths=0, alpha=0.9, ax=ax)
     
-    # 2. 普通agent，道德化 (圆形，黑色边框)
+    # 2. Normal agent, moralized (circle, black border)
     normal_moral = []
     normal_moral_colors = []
     for i in range(sim.num_agents):
@@ -83,7 +83,7 @@ def draw_network(sim, mode, title, filename):
                               node_size=node_size, edgecolors='black', 
                               linewidths=1, alpha=0.9, ax=ax)
     
-    # 3. 所有zealot (圆形，金色边框) - 不论是否道德化都用金色边框
+    # 3. All zealots (circle, gold border) - use gold border regardless of moralization
     if zealot_ids:
         zealot_colors = [node_colors[i] for i in zealot_ids]
         nx.draw_networkx_nodes(sim.graph, pos=sim.pos, nodelist=zealot_ids,
@@ -91,19 +91,19 @@ def draw_network(sim, mode, title, filename):
                               node_size=node_size, edgecolors='gold', 
                               linewidths=2, alpha=0.9, ax=ax)
     
-    # 绘制边
+    # Draw edges
     nx.draw_networkx_edges(sim.graph, pos=sim.pos, edge_color="#888888", 
                           alpha=0.7, width=1.2, ax=ax)
     
-    # 设置标题和样式
+    # Set title and style
     ax.set_title(title, fontsize=18)
     ax.set_aspect('equal', 'box')
     ax.axis('off')
     
-    # 创建图例
+    # Create legend
     legend_patches = []
     
-    # 基于mode添加颜色图例
+    # Add color legend based on mode
     if mode == "identity":
         legend_patches.extend([
             Patch(color='#ff7f00', label='Identity: 1'),
@@ -120,13 +120,13 @@ def draw_network(sim, mode, title, filename):
             Patch(color='#4daf4a', label='Identity: -1')
         ])
     
-    # 添加边框说明
+    # Add border descriptions
     if has_zealots or any(sim.morals == 1):
-        # 添加分隔线
+        # Add separator
         if legend_patches:
-            legend_patches.append(Patch(color='white', alpha=0, label=''))  # 空白分隔
+            legend_patches.append(Patch(color='white', alpha=0, label=''))  # Blank separator
         
-        # 边框说明
+        # Border descriptions
         if any(sim.morals == 1):
             legend_patches.append(
                 Patch(facecolor='lightgray', edgecolor='black', linewidth=2, label='Black border: Moralizing')
@@ -137,14 +137,14 @@ def draw_network(sim, mode, title, filename):
                 Patch(facecolor='lightgray', edgecolor='gold', linewidth=2.5, label='Gold border: Zealot')
             )
     
-    # 根据模式调整图例位置，避免与colorbar冲突
+    # Adjust legend position based on mode to avoid conflict with colorbar
     if legend_patches:
         if mode == "opinion":
-            # opinion模式下，图例放在左下角，避免与右侧colorbar冲突
+            # In opinion mode, place the legend in the lower-left corner to avoid conflict with the colorbar on the right
             ax.legend(handles=legend_patches, loc='lower left', bbox_to_anchor=(0, 0), 
                      title="Legend", frameon=True, fontsize=9)
         else:
-            # 其他模式下，图例放在右侧
+            # In other modes, place the legend on the right side
             ax.legend(handles=legend_patches, loc='upper left', bbox_to_anchor=(1.02, 1), 
                      title="Legend", frameon=True)
     

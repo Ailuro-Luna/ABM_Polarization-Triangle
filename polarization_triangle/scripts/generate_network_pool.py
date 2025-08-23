@@ -31,8 +31,8 @@ def main():
                         help="LFR mixing parameter mu (default: 0.1)")
     parser.add_argument("--avg-degree", type=int, default=5,
                         help="Average degree (default: 5)")
-    parser.add_argument("--min-community", type=int, default=30,
-                        help="Minimum community size (default: 30)")
+    parser.add_argument("--min-community", type=int, default=10,
+                        help="Minimum community size (default: 10)")
     parser.add_argument("--start-seed", type=int, default=42,
                         help="Starting random seed (default: 42)")
     parser.add_argument("--skip-existing", action="store_true",
@@ -90,6 +90,7 @@ def main():
         "mu": args.mu,
         "average_degree": args.avg_degree,
         "min_community": args.min_community,
+        "max_community": 50,
         "timeout": 60
     }
     
@@ -114,38 +115,6 @@ def main():
     else:
         print("Network pool generation failed")
         sys.exit(1)
-
-
-def generate_default_pools():
-    """
-    Generate default network pools with commonly used parameters
-    """
-    print("Generating default network pools...")
-    
-    # Configure different parameter combinations
-    pool_configs = [
-        {"name": "default", "mu": 0.1, "nodes": 500, "size": 50},
-        {"name": "high_mixing", "mu": 0.3, "nodes": 500, "size": 30},
-        {"name": "low_mixing", "mu": 0.05, "nodes": 500, "size": 30},
-    ]
-    
-    for config in pool_configs:
-        pool_dir = f"network_cache/{config['name']}_pool"
-        print(f"Generating {config['name']} pool (mu={config['mu']})...")
-        
-        pool = NetworkPool(pool_dir)
-        lfr_params = {
-            "n": config["nodes"],
-            "mu": config["mu"],
-            "average_degree": 5,
-            "min_community": 10,
-            "timeout": 60
-        }
-        
-        pool.generate_pool(config["size"], lfr_params, skip_existing=True)
-        print(f"Completed: {pool_dir}")
-    
-    print("All default network pools generation completed")
 
 
 if __name__ == "__main__":

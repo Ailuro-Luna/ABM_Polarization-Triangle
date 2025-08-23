@@ -25,7 +25,7 @@ def generate_lfr_network(
     mu: float = 0.1,
     average_degree: int = 5,
     min_community: int = 30,
-    max_community: Optional[int] = None,
+    max_community: int = 50,
     seed: Optional[int] = None,
     max_iters: int = 300,
     timeout: int = 60
@@ -89,13 +89,13 @@ def generate_lfr_network(
             logger.info("Network not connected, fixing connectivity...")
             _ensure_connectivity(G)
             
-        logger.info(f"网络生成完成: {G.number_of_nodes()} nodes, {G.number_of_edges()}条边, "
-                   f"time taken{time.time() - start_time:.2f} seconds")
+        logger.info(f"Network generation completed: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges, "
+                   f"time taken {time.time() - start_time:.2f} seconds")
         
         return G
         
     except Exception as e:
-        logger.error(f"Generate LFR network error occurred: {e}")
+        logger.error(f"An error occurred during LFR network generation: {e}")
         return None
 
 

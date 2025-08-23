@@ -3,12 +3,12 @@ import numpy as np
 
 def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=False, window_size=5):
     """
-    Draw interaction type frequency change over time。
+    Draw interaction type frequency change over time.
     
-    参数:
+    Parameters:
     rule_counts_history -- List containing interaction type counts for each time step, shape(time_steps, 16)
-    title -- 图表标题
-    filename -- 保存文件名
+    title -- Chart title
+    filename -- Save filename
     smooth -- Whether to smooth curves
     window_size -- Smoothing window size
     """
@@ -24,14 +24,14 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
     time_steps = rule_counts.shape[0]
     num_rules = rule_counts.shape[1] if len(rule_counts.shape) > 1 else 0
     
-    # 如果交互类型数量不符合预期，打印警告
+    # Print a warning if the number of interaction types is not as expected
     if num_rules != 16 and num_rules != 8:
         print(f"Warning: Number of interaction types ({num_rules}) is not the expected 8 or 16")
     
     # Prepare time axis
     time = np.arange(time_steps)
     
-    # Interaction type names - 现在是16种交互类型
+    # Interaction type names - now 16 interaction types
     rule_names = [
         "Rule 1: Same dir, Same ID, {0,0}, High Convergence",
         "Rule 2: Same dir, Same ID, {0,1}, Medium Pull",
@@ -51,7 +51,7 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
         "Rule 16: Diff dir, Diff ID, {1,1}, Very High Polarization"
     ]
     
-    # 如果是旧模式（8种交互类型），使用旧的名称
+    # If it's the old mode (8 interaction types), use the old names
     if num_rules == 8:
         rule_names = [
             "Rule 1: Same dir, Same ID, Non-moral, Converge",
@@ -64,7 +64,7 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
             "Rule 8: Diff dir, Diff ID, Moral, Polarize"
         ]
     
-    # 设置颜色 - 为16种交互类型扩展颜色列表
+    # Set colors - extend color list for 16 interaction types
     colors = [
         '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', 
         '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
@@ -74,7 +74,7 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
     
     plt.figure(figsize=(14, 10))
     
-    # 平滑数据（如果需要）
+    # Smooth data (if needed)
     if smooth and time_steps > window_size:
         for i in range(num_rules):
             # Use moving average for smoothing
@@ -100,7 +100,7 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
     plt.savefig(filename)
     plt.close()
 
-    # Additionally create a stacked area chart，showing interaction type proportions
+    # Additionally create a stacked area chart, showing interaction type proportions
     plt.figure(figsize=(14, 10))
     
     # Calculate total interaction types for each time step
@@ -132,12 +132,12 @@ def draw_interaction_type_usage(rule_counts_history, title, filename, smooth=Fal
 
 def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename, smooth=False, window_size=5):
     """
-    Draw interaction type cumulative count change over time。
+    Draw interaction type cumulative count change over time.
     
-    参数:
+    Parameters:
     rule_counts_history -- List containing interaction type counts for each time step, shape(time_steps, 16)
-    title -- 图表标题
-    filename -- 保存文件名
+    title -- Chart title
+    filename -- Save filename
     smooth -- Whether to smooth curves
     window_size -- Smoothing window size
     """
@@ -153,7 +153,7 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     time_steps = rule_counts.shape[0]
     num_rules = rule_counts.shape[1] if len(rule_counts.shape) > 1 else 0
     
-    # 如果交互类型数量不符合预期，打印警告
+    # Print a warning if the number of interaction types is not as expected
     if num_rules != 16 and num_rules != 8:
         print(f"Warning: Number of interaction types ({num_rules}) is not the expected 8 or 16")
     
@@ -163,7 +163,7 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     # Prepare time axis
     time = np.arange(time_steps)
     
-    # Interaction type names - 现在是16种交互类型
+    # Interaction type names - now 16 interaction types
     rule_names = [
         "Rule 1: Same dir, Same ID, {0,0}, High Convergence",
         "Rule 2: Same dir, Same ID, {0,1}, Medium Pull",
@@ -183,7 +183,7 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
         "Rule 16: Diff dir, Diff ID, {1,1}, Very High Polarization"
     ]
     
-    # 如果是旧模式（8种交互类型），使用旧的名称
+    # If it's the old mode (8 interaction types), use the old names
     if num_rules == 8:
         rule_names = [
             "Rule 1: Same dir, Same ID, Non-moral, Converge",
@@ -196,7 +196,7 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
             "Rule 8: Diff dir, Diff ID, Moral, Polarize"
         ]
     
-    # 设置颜色 - 为16种交互类型扩展颜色列表
+    # Set colors - extend color list for 16 interaction types
     colors = [
         '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', 
         '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
@@ -206,7 +206,7 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     
     plt.figure(figsize=(14, 10))
     
-    # 平滑数据（如果需要）
+    # Smooth data (if needed)
     if smooth and time_steps > window_size:
         for i in range(num_rules):
             # Use moving average for smoothing
@@ -232,7 +232,7 @@ def draw_interaction_type_cumulative_usage(rule_counts_history, title, filename,
     plt.savefig(filename)
     plt.close()
 
-    # Additionally create a stacked area chart，showing interaction type proportions
+    # Additionally create a stacked area chart, showing interaction type proportions
     plt.figure(figsize=(14, 10))
     
     # Create stacked area chart

@@ -29,11 +29,11 @@ def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') ->
     Returns:
     Dictionary containing all saved file paths
     """
-    # 创建目录（如果不存在）
+    # Create directory if it doesn't exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # 保存轨迹数据
+    # Save trajectory data
     trajectory_data = {
         'step': [],
         'agent_id': [],
@@ -44,17 +44,17 @@ def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') ->
         'social_influence': []
     }
     
-    # 获取完整历史
+    # Get full history
     activation_history = sim.get_activation_history()
     
-    # 如果存在历史数据
+    # If history data exists
     if sim.self_activation_history:
-        # 为每一步、每个agent添加数据
+        # Add data for each step and each agent
         for step in range(len(sim.self_activation_history)):
             for agent_id in range(sim.num_agents):
                 trajectory_data['step'].append(step)
                 trajectory_data['agent_id'].append(agent_id)
-                # 对于opinion需要从trajectory中获取，如果没有则用当前值
+                # For opinion, get from trajectory; if not available, use current value
                 if hasattr(sim, 'opinion_trajectory') and step < len(sim.opinion_trajectory):
                     trajectory_data['opinion'].append(sim.opinion_trajectory[step][agent_id])
                 else:
@@ -65,12 +65,12 @@ def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') ->
                 trajectory_data['self_activation'].append(activation_history['self_activation_history'][step][agent_id])
                 trajectory_data['social_influence'].append(activation_history['social_influence_history'][step][agent_id])
     
-    # 将数据转换为DataFrame并保存为CSV
+    # Convert data to DataFrame and save as CSV
     df = pd.DataFrame(trajectory_data)
     trajectory_csv_path = os.path.join(output_dir, f"{prefix}_trajectory.csv")
     df.to_csv(trajectory_csv_path, index=False)
     
-    # 保存最终状态数据
+    # Save final state data
     final_state = {
         'agent_id': list(range(sim.num_agents)),
         'opinion': sim.opinions.tolist(),
@@ -84,10 +84,10 @@ def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') ->
     final_csv_path = os.path.join(output_dir, f"{prefix}_final_state.csv")
     df_final.to_csv(final_csv_path, index=False)
     
-    # 保存网络结构
+    # Save network structure
     network_data = []
     for i in range(sim.num_agents):
-        for j in range(i+1, sim.num_agents):  # 只保存上三角矩阵避免重复
+        for j in range(i+1, sim.num_agents):  # Only save the upper triangular matrix to avoid duplication
             if sim.adj_matrix[i, j] > 0:
                 network_data.append({
                     'source': i,
@@ -99,11 +99,11 @@ def save_simulation_data(sim: Any, output_dir: str, prefix: str = 'sim_data') ->
     network_csv_path = os.path.join(output_dir, f"{prefix}_network.csv")
     df_network.to_csv(network_csv_path, index=False)
     
-    # 保存模拟配置
+    # Save simulation configuration
     config_dict = vars(sim.config)
     config_data = []
     for key, value in config_dict.items():
-        # 跳过无法序列化的复杂对象
+        # Skip complex objects that cannot be serialized
         if isinstance(value, (int, float, str, bool)) or value is None:
             config_data.append({'parameter': key, 'value': value})
     
@@ -144,15 +144,15 @@ class ExperimentDataManager:
         self.data_dir = self.base_dir / "experiment_data"
         self.metadata_dir = self.base_dir / "metadata"
         
-        # 创建必要的目录结构
+        # Create necessary directory structure
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.metadata_dir.mkdir(parents=True, exist_ok=True)
         
-        # 数据文件路径
+        # Data file paths
         self.zealot_numbers_file = self.data_dir / "zealot_numbers_data.parquet"
         self.morality_ratios_file = self.data_dir / "morality_ratios_data.parquet"
         
-        # 元数据文件路径
+        # Metadata file paths
         self.batch_metadata_file = self.metadata_dir / "batch_metadata.json"
         self.experiment_config_file = self.metadata_dir / "experiment_config.json"
     
@@ -161,14 +161,14 @@ class ExperimentDataManager:
                           batch_data: Dict[str, Any],
                           batch_metadata: Dict[str, Any]) -> None:
         """
-        保存批次实验结果
+        Save batch experiment results
         
         Args:
-            plot_type: 'zealot_numbers' 或 'morality_ratios'
-            batch_data: 批次数据 {combination_label: {x_values: [], results: {}}}
-            batch_metadata: 批次元数据
+            plot_type: 'zealot_numbers' or 'morality_ratios'
+            batch_data: Batch data {combination_label: {x_values: [], results: {}}}
+            batch_metadata: Batch metadata
         """
-        # 将嵌套的结果数据转换为扁平的DataFrame格式
+        # Convert nested result data to a flat DataFrame format
         rows = []
         batch_id = batch_metadata.get('batch_id', f"batch_{int(time.time())}")
         timestamp = batch_metadata.get('timestamp', datetime.now().isoformat())
@@ -191,37 +191,37 @@ class ExperimentDataManager:
                                 'value': run_value
                             })
         
-        # 创建DataFrame
+        # Create DataFrame
         new_df = pd.DataFrame(rows)
         
-        # 确定目标文件
+        # Determine the target file
         target_file = self.zealot_numbers_file if plot_type == 'zealot_numbers' else self.morality_ratios_file
         
-        # 追加或创建数据文件
+        # Append to or create the data file
         if target_file.exists():
-            # 读取现有数据并合并
+            # Read existing data and merge
             existing_df = pd.read_parquet(target_file)
             combined_df = pd.concat([existing_df, new_df], ignore_index=True)
         else:
             combined_df = new_df
         
-        # 保存为Parquet格式（自动压缩）
+        # Save as Parquet format (with automatic compression)
         combined_df.to_parquet(target_file, compression='snappy', index=False)
         
-        # 更新批次元数据
+        # Update batch metadata
         self._update_batch_metadata(batch_metadata)
         
-        print(f"💾 Saved batch data: {len(rows)} records to {target_file.name}")
+        print(f"Saved batch data: {len(rows)} records to {target_file.name}")
     
     def load_experiment_data(self, plot_type: str) -> Optional[pd.DataFrame]:
         """
-        加载实验数据
+        Load experiment data
         
         Args:
-            plot_type: 'zealot_numbers' 或 'morality_ratios'
+            plot_type: 'zealot_numbers' or 'morality_ratios'
         
         Returns:
-            DataFrame 或 None
+            DataFrame or None
         """
         target_file = self.zealot_numbers_file if plot_type == 'zealot_numbers' else self.morality_ratios_file
         
@@ -229,18 +229,18 @@ class ExperimentDataManager:
             return None
         
         df = pd.read_parquet(target_file)
-        print(f"📂 Loaded {len(df)} records from {target_file.name}")
+        print(f"Loaded {len(df)} records from {target_file.name}")
         return df
     
     def get_experiment_summary(self, plot_type: str) -> Dict[str, Any]:
         """
-        获取实验数据摘要统计
+        Get summary statistics for experiment data
         
         Args:
-            plot_type: 'zealot_numbers' 或 'morality_ratios'
+            plot_type: 'zealot_numbers' or 'morality_ratios'
         
         Returns:
-            摘要统计字典
+            Dictionary of summary statistics
         """
         df = self.load_experiment_data(plot_type)
         if df is None or df.empty:
@@ -255,11 +255,11 @@ class ExperimentDataManager:
             'total_runs_per_combination': {}
         }
         
-        # 计算每个组合的总运行次数
+        # Calculate the total number of runs for each combination
         for combo in summary['combinations']:
             combo_data = df[df['combination'] == combo]
             if not combo_data.empty:
-                # 计算总运行次数 = 总记录数 / (x值数量 * 指标数量)
+                # Calculate total runs = total records / (number of x_values * number of metrics)
                 unique_x_values = len(combo_data['x_value'].unique())
                 unique_metrics = len(combo_data['metric'].unique())
                 total_runs = len(combo_data) // (unique_x_values * unique_metrics) if unique_x_values > 0 and unique_metrics > 0 else 0
@@ -269,10 +269,10 @@ class ExperimentDataManager:
     
     def convert_to_plotting_format(self, plot_type: str) -> Tuple[Dict[str, Dict[str, List[List[float]]]], List[float], Dict[str, int]]:
         """
-        将存储的数据转换为绘图格式
+        Convert stored data to plotting format
         
         Args:
-            plot_type: 'zealot_numbers' 或 'morality_ratios'
+            plot_type: 'zealot_numbers' or 'morality_ratios'
         
         Returns:
             (all_results, x_values, total_runs_per_combination)
@@ -281,25 +281,25 @@ class ExperimentDataManager:
         if df is None or df.empty:
             return {}, [], {}
         
-        # 获取所有唯一值
+        # Get all unique values
         combinations = sorted(df['combination'].unique())
         x_values = sorted(df['x_value'].unique())
         metrics = sorted(df['metric'].unique())
         
-        # 初始化结果结构
+        # Initialize result structure
         all_results = {}
         total_runs_per_combination = {}
         
         for combination in combinations:
             combo_data = df[df['combination'] == combination]
             
-            # 计算总运行次数
+            # Calculate total number of runs
             unique_x_values = len(combo_data['x_value'].unique())
             unique_metrics = len(combo_data['metric'].unique())
             total_runs = len(combo_data) // (unique_x_values * unique_metrics) if unique_x_values > 0 and unique_metrics > 0 else 0
             total_runs_per_combination[combination] = total_runs
             
-            # 组织数据为绘图格式
+            # Organize data into plotting format
             combo_results = {}
             
             for metric in metrics:
@@ -319,31 +319,31 @@ class ExperimentDataManager:
     
     def _update_batch_metadata(self, batch_metadata: Dict[str, Any]) -> None:
         """
-        更新批次元数据
+        Update batch metadata
         
         Args:
-            batch_metadata: 批次元数据
+            batch_metadata: Batch metadata
         """
-        # 读取现有元数据
+        # Read existing metadata
         if self.batch_metadata_file.exists():
             with open(self.batch_metadata_file, 'r', encoding='utf-8') as f:
                 all_metadata = json.load(f)
         else:
             all_metadata = {'batches': []}
         
-        # 添加新批次
+        # Add new batch
         all_metadata['batches'].append(batch_metadata)
         
-        # 保存元数据
+        # Save metadata
         with open(self.batch_metadata_file, 'w', encoding='utf-8') as f:
             json.dump(all_metadata, f, indent=2, ensure_ascii=False)
     
     def get_batch_metadata(self) -> Dict[str, Any]:
         """
-        获取所有批次元数据
+        Get all batch metadata
         
         Returns:
-            批次元数据字典
+            Dictionary of batch metadata
         """
         if not self.batch_metadata_file.exists():
             return {'batches': []}
@@ -353,10 +353,10 @@ class ExperimentDataManager:
     
     def save_experiment_config(self, config: Dict[str, Any]) -> None:
         """
-        保存实验配置
+        Save experiment configuration
         
         Args:
-            config: 实验配置字典
+            config: Experiment configuration dictionary
         """
         config['saved_at'] = datetime.now().isoformat()
         
@@ -365,10 +365,10 @@ class ExperimentDataManager:
     
     def export_summary_report(self) -> str:
         """
-        导出实验摘要报告
+        Export experiment summary report
         
         Returns:
-            摘要报告字符串
+            Summary report string
         """
         zealot_summary = self.get_experiment_summary('zealot_numbers')
         morality_summary = self.get_experiment_summary('morality_ratios')
@@ -376,29 +376,29 @@ class ExperimentDataManager:
         
         report = []
         report.append("=" * 60)
-        report.append("实验数据摘要报告")
+        report.append("Experiment Data Summary Report")
         report.append("=" * 60)
         
-        report.append(f"\n📊 Zealot Numbers 实验:")
-        report.append(f"   总记录数: {zealot_summary['total_records']}")
-        report.append(f"   参数组合数: {len(zealot_summary['combinations'])}")
-        report.append(f"   批次数: {len(zealot_summary['batches'])}")
+        report.append(f"\nZealot Numbers Experiment:")
+        report.append(f"   Total Records: {zealot_summary['total_records']}")
+        report.append(f"   Number of Combinations: {len(zealot_summary['combinations'])}")
+        report.append(f"   Number of Batches: {len(zealot_summary['batches'])}")
         
-        report.append(f"\n�� Morality Ratios 实验:")
-        report.append(f"   总记录数: {morality_summary['total_records']}")
-        report.append(f"   参数组合数: {len(morality_summary['combinations'])}")
-        report.append(f"   批次数: {len(morality_summary['batches'])}")
+        report.append(f"\nMorality Ratios Experiment:")
+        report.append(f"   Total Records: {morality_summary['total_records']}")
+        report.append(f"   Number of Combinations: {len(morality_summary['combinations'])}")
+        report.append(f"   Number of Batches: {len(morality_summary['batches'])}")
         
-        report.append(f"\n📅 批次历史: {len(batch_metadata.get('batches', []))} 个批次")
+        report.append(f"\nBatch History: {len(batch_metadata.get('batches', []))} batches")
         
-        # 存储空间信息
+        # Storage space information
         zealot_size = self.zealot_numbers_file.stat().st_size if self.zealot_numbers_file.exists() else 0
         morality_size = self.morality_ratios_file.stat().st_size if self.morality_ratios_file.exists() else 0
         total_size = zealot_size + morality_size
         
-        report.append(f"\n💾 存储空间:")
+        report.append(f"\nStorage Space:")
         report.append(f"   Zealot Numbers: {zealot_size / 1024:.1f} KB")
         report.append(f"   Morality Ratios: {morality_size / 1024:.1f} KB")
-        report.append(f"   总计: {total_size / 1024:.1f} KB")
+        report.append(f"   Total: {total_size / 1024:.1f} KB")
         
         return "\n".join(report)

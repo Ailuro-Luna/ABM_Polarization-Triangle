@@ -1383,7 +1383,7 @@ def plot_results_with_manager(data_manager: ExperimentDataManager,
         
         plt.close()
     
-    print(f"  ✅ Generated high-quality mean plots for {plot_type}:")
+    print(f"  Done: Generated high-quality mean plots for {plot_type}:")
     print(f"     - Mean line plots: {plot_folders['mean']}")
 
 
@@ -1405,7 +1405,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     batch_name: Batch name to identify this run
     num_processes: Number of parallel processes, 1 means serial execution
     """
-    print("🔬 Running Tests and Accumulating Data with New Data Manager")
+    print("Running Tests and Accumulating Data with New Data Manager")
     print("=" * 70)
     
     start_time = time.time()
@@ -1422,7 +1422,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     # Generate batch seed to ensure different batches produce different random results
     batch_seed = int(time.time() * 1000) % (2**31)  # Use timestamp to generate seed
     
-    print(f"📊 Batch Configuration:")
+    print(f"Batch Configuration:")
     print(f"   Batch name: {batch_name}")
     print(f"   Number of runs this batch: {num_runs}")
     print(f"   Max zealots: {max_zealots}")
@@ -1433,7 +1433,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     print()
     
     # # === Process Plot 1: x-axis is zealot numbers ===
-    print("📈 Running Test Type 1: Zealot Numbers Analysis")
+    print("Running Test Type 1: Zealot Numbers Analysis")
     print("-" * 50)
     
     plot1_start_time = time.time()
@@ -1462,11 +1462,11 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     plot1_end_time = time.time()
     plot1_duration = plot1_end_time - plot1_start_time
     
-    print(f"⏱️  Test Type 1 completed in: {format_duration(plot1_duration)}")
+    print(f"  Test Type 1 completed in: {format_duration(plot1_duration)}")
     print()
     
     # === Process Plot 2: x-axis is morality ratio ===
-    print("📈 Running Test Type 2: Morality Ratio Analysis")
+    print("Running Test Type 2: Morality Ratio Analysis")
     print("-" * 50)
     
     plot2_start_time = time.time()
@@ -1495,7 +1495,7 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     plot2_end_time = time.time()
     plot2_duration = plot2_end_time - plot2_start_time
     
-    print(f"⏱️  Test Type 2 completed in: {format_duration(plot2_duration)}")
+    print(f"  Test Type 2 completed in: {format_duration(plot2_duration)}")
     print()
     
     # Calculate total time
@@ -1505,14 +1505,14 @@ def run_and_accumulate_data(output_dir: str = "results/zealot_morality_analysis"
     minutes, seconds = divmod(remainder, 60)
     
     print("\n" + "=" * 70)
-    print("🎉 Data Collection Completed Successfully!")
-    print(f"📊 Batch '{batch_name}' with {num_runs} runs per parameter point")
+    print("Data Collection Completed Successfully!")
+    print(f"Batch '{batch_name}' with {num_runs} runs per parameter point")
     print()
-    print("⏱️  Timing Summary:")
+    print("  Timing Summary:")
     # print(f"   Test Type 1 (Zealot Numbers): {format_duration(plot1_duration)}")
     print(f"   Test Type 2 (Morality Ratios): {format_duration(plot2_duration)}")
     print(f"   Total execution time: {format_duration(elapsed_time)}")
-    print(f"📁 Data saved using Parquet format in: {output_dir}/")
+    print(f"Data saved using Parquet format in: {output_dir}/")
     
     # Save experiment configuration to data manager
     experiment_config = {
@@ -1547,9 +1547,9 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
         smooth_method: Smoothing method ('savgol', 'moving_avg', 'none')
         error_band_type: Error band type for zealot_numbers plots ('std' or 'percentile')
     """
-    print("📊 Generating Plots from Data Manager")
+    print("Generating Plots from Data Manager")
     if enable_smoothing:
-        print(f"🎯 Smoothing enabled: step={target_step}, method={smooth_method}")
+        print(f"Smoothing enabled: step={target_step}, method={smooth_method}")
     print("=" * 70)
     
     start_time = time.time()
@@ -1561,7 +1561,7 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
     print("\n" + data_manager.export_summary_report())
     
     # Generate zealot numbers plots (with smoothing off to show error bands)
-    print("\n📈 Generating Zealot Numbers Plots...")
+    print("\nGenerating Zealot Numbers Plots...")
     zealot_summary = data_manager.get_experiment_summary('zealot_numbers')
     if zealot_summary['total_records'] > 0:
         plot_results_with_manager(data_manager, 'zealot_numbers', 
@@ -1574,30 +1574,30 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
             band_type_description = "confidence interval (99%)"
         else:
             band_type_description = "unknown"
-        print(f"✅ Generated {len(zealot_summary['combinations'])} zealot numbers plots with {band_type_description} error bands")
+        print(f"Done: Generated {len(zealot_summary['combinations'])} zealot numbers plots with {band_type_description} error bands")
     else:
-        print("❌ No zealot numbers data found")
+        print("Error: No zealot numbers data found")
     
     # Generate morality ratios plots (keeping user-defined smoothing options)
-    print("\n📈 Generating Morality Ratios Plots...")
+    print("\nGenerating Morality Ratios Plots...")
     morality_summary = data_manager.get_experiment_summary('morality_ratios')
     if morality_summary['total_records'] > 0:
         plot_results_with_manager(data_manager, 'morality_ratios',
                                 enable_smoothing, target_step, smooth_method, 'std')  # morality_ratios does not use error bands, pass default
         if enable_smoothing:
-            print(f"✅ Generated {len(morality_summary['combinations'])} morality ratios plots with smoothing")
+            print(f"Done: Generated {len(morality_summary['combinations'])} morality ratios plots with smoothing")
         else:
-            print(f"✅ Generated {len(morality_summary['combinations'])} morality ratios plots without smoothing")
+            print(f"Done: Generated {len(morality_summary['combinations'])} morality ratios plots without smoothing")
     else:
-        print("❌ No morality ratios data found")
+        print("Error: No morality ratios data found")
     
     # Calculate total time
     end_time = time.time()
     elapsed_time = end_time - start_time
     
     print("\n" + "=" * 70)
-    print("🎉 Plot Generation Completed Successfully!")
-    print(f"📊 Generated plots from Parquet data files")
+    print("Plot Generation Completed Successfully!")
+    print(f"Generated plots from Parquet data files")
     if error_band_type == 'std':
         band_type_description = "standard deviation"
     elif error_band_type == 'percentile':
@@ -1606,13 +1606,13 @@ def plot_from_accumulated_data(output_dir: str = "results/zealot_morality_analys
         band_type_description = "confidence interval (99%)"
     else:
         band_type_description = "unknown"
-    print(f"📈 Zealot Numbers: {band_type_description} error bands enabled (smoothing disabled)")
+    print(f"Zealot Numbers: {band_type_description} error bands enabled (smoothing disabled)")
     if enable_smoothing:
-        print(f"📈 Morality Ratios: Smoothing enabled (step {target_step}, {smooth_method})")
+        print(f"Morality Ratios: Smoothing enabled (step {target_step}, {smooth_method})")
     else:
-        print(f"📈 Morality Ratios: Smoothing disabled")
-    print(f"⏱️  Total plotting time: {format_duration(elapsed_time)}")
-    print(f"📁 Plots saved to: {output_dir}/mean_plots/")
+        print(f"Morality Ratios: Smoothing disabled")
+    print(f"  Total plotting time: {format_duration(elapsed_time)}")
+    print(f"Plots saved to: {output_dir}/mean_plots/")
 
 
 def run_zealot_morality_analysis(output_dir: str = "results/zealot_morality_analysis", 
@@ -1629,7 +1629,7 @@ def run_zealot_morality_analysis(output_dir: str = "results/zealot_morality_anal
     num_processes: Number of parallel processes, 1 means serial execution
     error_band_type: Error band type for zealot_numbers plots ('std' or 'percentile')
     """
-    print("🔬 Starting Complete Zealot and Morality Analysis Experiment")
+    print("Starting Complete Zealot and Morality Analysis Experiment")
     print("=" * 70)
     
     # Step 1: Run tests and accumulate data
@@ -1652,7 +1652,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     batch_name: Batch name
     num_processes: Number of parallel processes, 1 means serial execution
     """
-    print("🔬 Running No Zealot Morality Ratio Data Collection with New Data Manager")
+    print("Running No Zealot Morality Ratio Data Collection with New Data Manager")
     print("=" * 70)
     
     start_time = time.time()
@@ -1668,7 +1668,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
                              if combo['zealot_mode'] == 'none']
     
     if not no_zealot_combinations:
-        print("❌ No combinations with zealot_mode='none' found")
+        print("Error: No combinations with zealot_mode='none' found")
         return
     
     if not batch_name:
@@ -1677,7 +1677,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     # Generate batch seed to ensure different batches produce different random results
     batch_seed = int(time.time() * 1000) % (2**31)  # Use timestamp to generate seed
     
-    print(f"📊 No Zealot Batch Configuration:")
+    print(f"No Zealot Batch Configuration:")
     print(f"   Batch name: {batch_name}")
     print(f"   Number of runs this batch: {num_runs}")
     print(f"   Max morality ratio: {max_morality}%")
@@ -1690,7 +1690,7 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     morality_x_values = list(range(0, max_morality + 1, 2))  # 0, 2, 4, ..., max_morality
     morality_results = {}
     
-    print("📈 Running No Zealot Morality Ratio Analysis")
+    print("Running No Zealot Morality Ratio Analysis")
     print("-" * 50)
     
     for combo in no_zealot_combinations:
@@ -1717,10 +1717,10 @@ def run_no_zealot_morality_data(output_dir: str = "results/zealot_morality_analy
     elapsed_time = end_time - start_time
     
     print("\n" + "=" * 70)
-    print("🎉 No Zealot Data Collection Completed Successfully!")
-    print(f"📊 Batch '{batch_name}' with {num_runs} runs per parameter point")
-    print(f"⏱️  Total execution time: {format_duration(elapsed_time)}")
-    print(f"📁 Data saved using Parquet format in: {output_dir}/")
+    print("No Zealot Data Collection Completed Successfully!")
+    print(f"Batch '{batch_name}' with {num_runs} runs per parameter point")
+    print(f"  Total execution time: {format_duration(elapsed_time)}")
+    print(f"Data saved using Parquet format in: {output_dir}/")
     
     # Save experiment configuration to data manager
     experiment_config = {
@@ -1854,7 +1854,7 @@ if __name__ == "__main__":
     # Method 1: Run in two steps
     # Step 1: Run tests and accumulate data (can be run multiple times to accumulate more data)
     print("=" * 50)
-    print("🚀 Example: Running experiment in steps")
+    print("Example: Running experiment in steps")
     print("=" * 50)
     
     # Data collection phase
@@ -1902,10 +1902,10 @@ if __name__ == "__main__":
     total_duration = main_end_time - main_start_time
     
     # Display timing summary
-    print("\n" + "🕒" * 50)
-    print("⏱️  Complete Experiment Timing Summary")
-    print("🕒" * 50)
-    print(f"📊 Data collection phase took: {format_duration(data_collection_duration)}")
-    print(f"📈 Plot generation phase took: {format_duration(plotting_duration)}")
-    print(f"🎯 Total time: {format_duration(total_duration)}")
-    print("🕒" * 50) 
+    print("\n" + "=" * 50)
+    print("Complete Experiment Timing Summary")
+    print("=" * 50)
+    print(f"Data collection phase took: {format_duration(data_collection_duration)}")
+    print(f"Plot generation phase took: {format_duration(plotting_duration)}")
+    print(f"Total time: {format_duration(total_duration)}")
+    print("=" * 50) 

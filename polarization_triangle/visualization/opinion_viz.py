@@ -30,16 +30,16 @@ def draw_opinion_distribution_heatmap(history, title, filename, bins=50, log_sca
     # Create bins for opinion values
     opinion_bins = np.linspace(-1, 1, bins + 1)
 
-    # 初始化热力图数据矩阵
+    # Initialize heatmap data matrix
     heatmap_data = np.zeros((time_steps, bins))
 
-    # 对每个时间步骤计算opinion分布
+    # Calculate opinion distribution for each time step
     for t in range(time_steps):
-        # 计算每个bin中的agent数量
+        # Calculate the number of agents in each bin
         hist, _ = np.histogram(history[t], bins=opinion_bins, range=(-1, 1))
         heatmap_data[t] = hist
 
-    # 放大默认字体并禁用 Unicode 负号以避免某些字体缺字
+    # Enlarge default font and disable Unicode minus to avoid missing characters in some fonts
     plt.rcParams.update({
         'font.size': 18,
         'axes.titlesize': 26,
@@ -49,38 +49,38 @@ def draw_opinion_distribution_heatmap(history, title, filename, bins=50, log_sca
         'axes.unicode_minus': False
     })
 
-    # 创建绘图
+    # Create plot
     fig, ax = plt.subplots(figsize=(20, 12))
 
-    # 创建坐标
-    x = opinion_bins[:-1] + np.diff(opinion_bins) / 2  # opinion值（bin中点）
-    y = np.arange(time_steps)  # 时间步骤
+    # Create coordinates
+    x = opinion_bins[:-1] + np.diff(opinion_bins) / 2  # opinion values (bin midpoints)
+    y = np.arange(time_steps)  # time steps
 
-    # 确定颜色标准化
+    # Determine color normalization
     if custom_norm is not None:
-        # 使用自定义标准化
+        # Use custom normalization
         norm = custom_norm
     elif log_scale:
-        # 使用对数比例，先将0值替换为1（或最小非零值）以避免log(0)错误
+        # Use logarithmic scale, first replace 0 values with 1 (or the minimum non-zero value) to avoid log(0) error
         min_nonzero = np.min(heatmap_data[heatmap_data > 0]) if np.any(heatmap_data > 0) else -1
         log_data = np.copy(heatmap_data)
         log_data[log_data == 0] = min_nonzero
         
-        # 设置对数标准化的范围
+        # Set the range for logarithmic normalization
         log_vmin = vmin if vmin is not None else min_nonzero
         log_vmax = vmax if vmax is not None else np.max(log_data)
         norm = LogNorm(vmin=log_vmin, vmax=log_vmax)
         heatmap_data = log_data
     else:
-        # 使用线性比例
+        # Use linear scale
         linear_vmin = vmin if vmin is not None else np.min(heatmap_data)
         linear_vmax = vmax if vmax is not None else np.max(heatmap_data)
         norm = plt.Normalize(vmin=linear_vmin, vmax=linear_vmax)
 
-    # 绘制热力图
+    # Draw heatmap
     pcm = ax.pcolormesh(x, y, heatmap_data, norm=norm, cmap=cmap, shading='auto')
 
-    # 添加颜色条（使用数学格式，修复 10^{-1} 等显示与负号问题）
+    # Add colorbar (using math format to fix display issues with 10^{-1} and minus sign)
     cbar = fig.colorbar(pcm, ax=ax)
     try:
         from matplotlib.ticker import LogFormatterMathtext, ScalarFormatter
@@ -99,60 +99,60 @@ def draw_opinion_distribution_heatmap(history, title, filename, bins=50, log_sca
     cbar.set_label('Agent Count', fontsize=22)
     cbar.ax.tick_params(labelsize=20)
     
-    # 如果设置了具体的数值范围，可以自定义颜色条刻度
+    # If a specific value range is set, you can customize the colorbar ticks
     if vmin is not None and vmax is not None:
         if log_scale and not custom_norm:
-            # 对数尺度的刻度
+            # Ticks for logarithmic scale
             cbar.set_ticks([vmin, vmin*10, vmin*100, vmax])
         else:
-            # 线性尺度的刻度
+            # Ticks for linear scale
             step = (vmax - vmin) / 5
             cbar.set_ticks([vmin + i*step for i in range(6)])
 
-    # 设置标签和标题
+    # Set labels and title
     ax.set_xlabel('Opinion Value', fontsize=24)
     ax.set_ylabel('Time Step', fontsize=24)
     ax.set_title(title, fontsize=26)
     ax.tick_params(axis='both', labelsize=20)
 
-    # 优化Y轴刻度，防止过密
+    # Optimize Y-axis ticks to prevent overcrowding
     max_ticks = 10
     step = max(1, time_steps // max_ticks)
     ax.set_yticks(np.arange(0, time_steps, step))
 
-    # 保存图表
+    # Save chart
     plt.tight_layout()
     plt.savefig(filename, dpi=300)
     plt.close()
 
-    # 额外创建一个瀑布图版本，提供不同视角
+    # Additionally, create a waterfall plot version to provide a different perspective
     fig = plt.figure(figsize=(20, 12))
     ax = fig.add_subplot(111, projection='3d')
 
-    # 选择一些时间步骤来展示（避免过度拥挤）
+    # Select some time steps to display (to avoid overcrowding)
     step = max(1, time_steps // 20)
     selected_timesteps = np.arange(0, time_steps, step)
 
-    # 为3D图准备数据
+    # Prepare data for 3D plot
     X, Y = np.meshgrid(x, selected_timesteps)
     selected_data = heatmap_data[selected_timesteps]
 
-    # 绘制3D表面
+    # Draw 3D surface
     surf = ax.plot_surface(X, Y, selected_data, cmap=cmap, edgecolor='none', alpha=0.8)
 
-    # 设置标签和标题
+    # Set labels and title
     ax.set_xlabel('Opinion Value', fontsize=18)
     ax.set_ylabel('Time Step', fontsize=18)
     ax.set_zlabel('Agent Count', fontsize=18)
     ax.set_title(f"{title} - 3D View", fontsize=20)
     ax.tick_params(axis='both', labelsize=14)
 
-    # 添加颜色条
+    # Add colorbar
     cbar3d = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
     cbar3d.set_label('Agent Count', fontsize=16)
     cbar3d.ax.tick_params(labelsize=12)
 
-    # 保存3D图
+    # Save 3D plot
     waterfall_filename = filename.replace('.png', '_3d.png')
     plt.tight_layout()
     plt.savefig(waterfall_filename, dpi=300)

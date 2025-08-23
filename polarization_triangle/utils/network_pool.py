@@ -25,41 +25,41 @@ logger = logging.getLogger(__name__)
 class NetworkPool:
     """
     Network pool manager
-    负责批量生成、保存和加载LFR网络
+    Responsible for batch generation, saving, and loading of LFR networks.
     """
     
     def __init__(self, pool_dir: str):
         """
-        初始化Network pool manager
+        Initialize the Network Pool Manager.
         
-        参数:
-            pool_dir: 网络池存储目录
+        Parameters:
+            pool_dir: The directory to store the network pool.
         """
         self.pool_dir = Path(pool_dir)
         self.metadata_file = self.pool_dir / "pool_metadata.json"
         self.networks_dir = self.pool_dir / "networks"
         
-        # 确保目录存在
+        # Ensure directories exist
         self.pool_dir.mkdir(parents=True, exist_ok=True)
         self.networks_dir.mkdir(parents=True, exist_ok=True)
         
-        # 加载或初始化元数据
+        # Load or initialize metadata
         self.metadata = self._load_metadata()
     
     def _load_metadata(self) -> Dict:
-        """加载网络池元数据"""
+        """Load network pool metadata."""
         if self.metadata_file.exists():
             try:
                 with open(self.metadata_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
             except Exception as e:
-                logger.error(f"加载元数据失败: {e}")
+                logger.error(f"Failed to load metadata: {e}")
                 return self._create_empty_metadata()
         else:
             return self._create_empty_metadata()
     
     def _create_empty_metadata(self) -> Dict:
-        """创建空的元数据结构"""
+        """Create an empty metadata structure."""
         return {
             "pool_info": {
                 "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -70,12 +70,12 @@ class NetworkPool:
         }
     
     def _save_metadata(self):
-        """保存元数据到文件"""
+        """Save metadata to a file."""
         try:
             with open(self.metadata_file, 'w', encoding='utf-8') as f:
                 json.dump(self.metadata, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            logger.error(f"保存元数据失败: {e}")
+            logger.error(f"Failed to save metadata: {e}")
     
     def generate_pool(
         self, 
@@ -85,18 +85,18 @@ class NetworkPool:
         skip_existing: bool = True
     ) -> bool:
         """
-        批量生成网络池
+        Generate a batch of networks for the pool.
         
-        参数:
-            pool_size: 要生成的网络数量
-            lfr_params: LFR参数字典，如果为None则使用默认参数
-            start_seed: 起始随机种子
-            skip_existing: 是否跳过已存在的网络
+        Parameters:
+            pool_size: The number of networks to generate.
+            lfr_params: A dictionary of LFR parameters. If None, default parameters are used.
+            start_seed: The starting random seed.
+            skip_existing: Whether to skip generating networks that already exist.
             
-        返回:
-            成功返回True，失败返回False
+        Returns:
+            True if successful, False otherwise.
         """
-        # 使用默认LFR参数
+        # Use default LFR parameters if none are provided
         if lfr_params is None:
             lfr_params = {
                 "n": 500,
@@ -104,14 +104,15 @@ class NetworkPool:
                 "tau2": 1.5,
                 "mu": 0.1,
                 "average_degree": 5,
-                "min_community": 30,
+                "min_community": 10,
+                "max_community": 50,
                 "timeout": 60
             }
         
-        logger.info(f"开始生成网络池: {pool_size}个网络")
-        logger.info(f"LFR参数: {lfr_params}")
+        logger.info(f"Starting to generate network pool: {pool_size} networks")
+        logger.info(f"LFR parameters: {lfr_params}")
         
-        # 更新元数据中的参数信息
+        # Update parameter info in metadata
         self.metadata["pool_info"]["lfr_params"] = lfr_params
         
         success_count = 0
@@ -121,25 +122,25 @@ class NetworkPool:
             network_id = f"network_{i:04d}"
             network_file = self.networks_dir / f"{network_id}.pkl"
             
-            # 检查是否跳过已存在的网络
+            # Check if existing networks should be skipped
             if skip_existing and network_file.exists():
-                logger.info(f"跳过已存在的网络: {network_id}")
+                logger.info(f"Skipping existing network: {network_id}")
                 success_count += 1
                 continue
             
-            # 生成网络
+            # Generate network
             seed = start_seed + i
-            logger.info(f"生成第 {i+1}/{pool_size} 个网络 (seed={seed})")
+            logger.info(f"Generating network {i+1}/{pool_size} (seed={seed})")
             
             G = generate_lfr_network(seed=seed, **lfr_params)
             
             if G is not None:
-                # 保存网络
+                # Save the network
                 try:
                     with open(network_file, 'wb') as f:
                         pickle.dump(G, f)
                     
-                    # 更新元数据
+                    # Update metadata
                     self.metadata["networks"][network_id] = {
                         "file": f"networks/{network_id}.pkl",
                         "seed": seed,
@@ -150,75 +151,75 @@ class NetworkPool:
                     }
                     
                     success_count += 1
-                    logger.info(f"网络 {network_id} 生成并保存成功")
+                    logger.info(f"Network {network_id} generated and saved successfully")
                     
                 except Exception as e:
-                    logger.error(f"保存网络 {network_id} 失败: {e}")
+                    logger.error(f"Failed to save network {network_id}: {e}")
             else:
-                logger.error(f"生成网络 {network_id} 失败")
+                logger.error(f"Failed to generate network {network_id}")
         
-        # 更新总体元数据
+        # Update overall metadata
         self.metadata["pool_info"]["total_networks"] = success_count
         self.metadata["pool_info"]["last_updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
         
-        # 保存元数据
+        # Save metadata
         self._save_metadata()
         
         total_time = time.time() - total_start_time
-        logger.info(f"网络池生成完成: {success_count}/{pool_size} 成功, 总用时 {total_time:.1f} 秒")
+        logger.info(f"Network pool generation complete: {success_count}/{pool_size} successful, total time {total_time:.1f} seconds")
         
         return success_count > 0
     
     def load_network(self, network_id: Optional[str] = None, index: Optional[int] = None) -> Optional[nx.Graph]:
         """
-        从网络池加载网络
+        Load a network from the pool.
         
-        参数:
-            network_id: 网络ID（如"network_0001"）
-            index: 网络索引（0开始）
+        Parameters:
+            network_id: The ID of the network (e.g., "network_0001").
+            index: The index of the network (starting from 0).
             
-        返回:
-            成功返回networkx.Graph对象，失败返回None
+        Returns:
+            A networkx.Graph object on success, None on failure.
         """
-        # 根据索引确定网络ID
+        # Determine network_id from index if provided
         if index is not None:
             network_id = f"network_{index:04d}"
         
         if network_id is None:
-            logger.error("必须提供network_id或index参数")
+            logger.error("Either network_id or index must be provided.")
             return None
         
-        # 检查网络是否存在于元数据中
+        # Check if the network exists in metadata
         if network_id not in self.metadata["networks"]:
-            logger.error(f"网络 {network_id} 不存在于池中")
+            logger.error(f"Network {network_id} does not exist in the pool.")
             return None
         
-        # 获取网络文件路径
+        # Get the network file path
         network_file = self.pool_dir / self.metadata["networks"][network_id]["file"]
         
         if not network_file.exists():
-            logger.error(f"网络文件不存在: {network_file}")
+            logger.error(f"Network file does not exist: {network_file}")
             return None
         
-        # 加载网络
+        # Load the network
         try:
             with open(network_file, 'rb') as f:
                 G = pickle.load(f)
-            logger.debug(f"成功加载网络 {network_id}: {G.number_of_nodes()}个节点")
+            logger.debug(f"Successfully loaded network {network_id}: {G.number_of_nodes()} nodes")
             return G
         except Exception as e:
-            logger.error(f"加载网络 {network_id} 失败: {e}")
+            logger.error(f"Failed to load network {network_id}: {e}")
             return None
     
     def get_random_network(self) -> Optional[nx.Graph]:
         """
-        随机获取一个网络
+        Get a random network from the pool.
         
-        返回:
-            随机的networkx.Graph对象，如果池为空返回None
+        Returns:
+            A random networkx.Graph object, or None if the pool is empty.
         """
         if not self.metadata["networks"]:
-            logger.error("网络池为空")
+            logger.error("Network pool is empty.")
             return None
         
         import random
@@ -227,10 +228,10 @@ class NetworkPool:
     
     def get_pool_info(self) -> Dict:
         """
-        获取网络池信息
+        Get information about the network pool.
         
-        返回:
-            包含池信息的字典
+        Returns:
+            A dictionary containing pool information.
         """
         return {
             "pool_directory": str(self.pool_dir),
@@ -242,10 +243,10 @@ class NetworkPool:
     
     def list_networks(self) -> List[Dict]:
         """
-        列出池中所有网络的信息
+        List information for all networks in the pool.
         
-        返回:
-            网络信息列表
+        Returns:
+            A list of network information dictionaries.
         """
         networks = []
         for network_id, info in self.metadata["networks"].items():
@@ -261,18 +262,18 @@ class NetworkPool:
 
 def create_default_pool(pool_dir: str, pool_size: int = 50) -> NetworkPool:
     """
-    创建默认参数的网络池
+    Create a network pool with default parameters.
     
-    参数:
-        pool_dir: 池存储目录
-        pool_size: 池大小
+    Parameters:
+        pool_dir: The directory to store the pool.
+        pool_size: The size of the pool.
         
-    返回:
-        NetworkPool对象
+    Returns:
+        A NetworkPool object.
     """
     pool = NetworkPool(pool_dir)
     
-    # 使用与config.py中一致的默认参数
+    # Use default parameters consistent with config.py
     default_params = {
         "n": 500,
         "tau1": 3.0,
@@ -288,31 +289,31 @@ def create_default_pool(pool_dir: str, pool_size: int = 50) -> NetworkPool:
 
 
 if __name__ == "__main__":
-    # 简单测试
+    # Simple test
     print("Testing network pool system...")
     
     test_pool_dir = "./test_network_pool"
     pool = NetworkPool(test_pool_dir)
     
-    # 生成小规模测试池
+    # Generate a small test pool
     success = pool.generate_pool(pool_size=3, lfr_params={"n": 50, "mu": 0.1})
     
     if success:
-        # 测试加载
+        # Test loading
         print("Pool info:")
         info = pool.get_pool_info()
         for key, value in info.items():
             print(f"  {key}: {value}")
         
-        # 测试网络加载
+        # Test network loading
         G = pool.load_network(index=0)
         if G:
             print(f"Successfully loaded network: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
         
-        # 清理测试文件
+        # Clean up test files
         import shutil
         if os.path.exists(test_pool_dir):
             shutil.rmtree(test_pool_dir)
-            print("清理测试文件完成")
+            print("Cleaned up test files.")
     else:
-        print("网络池生成失败")
+        print("Network pool generation failed.")
